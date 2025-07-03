@@ -1,15 +1,17 @@
-import ResumeForm from "@/components/ResumeForm";
-import Image from "next/image";
-import ResumeList from '@/components/ResumeList';
-import RegisterPage from "@/app/register/page";
-export default function Home() {
+import HeroSection from '@/components/sections/HeroSection';
+import BenefitsSection from '@/components/sections/BenefitsSection';
+import CTASection from '@/components/sections/CTASection';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
+
+export default function LandingPage() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <RegisterPage />
-        <ResumeForm userId="" />
-        <ResumeList userId="" />
-      </main>
-    </div>
+    <main className="min-h-screen">
+      <Header />
+      <HeroSection />
+      <BenefitsSection />
+      <CTASection />
+      <Footer />
+    </main>
   );
 }

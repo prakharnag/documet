@@ -10,6 +10,8 @@ import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { db } from '@/db';
 import { resumes, resumeSections, resumeSubsections } from '@/db/schema';
 import { v4 as uuidv4 } from 'uuid';
+import { splitSectionIntoSubsections, formatEmbedding } from '@/lib/text-processing';
+import { uploadToS3 } from '@/lib/s3';
 
 // // Try/catch PDFLoader import to avoid runtime error if module is missing
 // let PDFLoader: any;
@@ -27,23 +29,6 @@ export const config = {
 };
 
 const readFile = promisify(fs.readFile);
-
-// Example: split section content into entries (subsections) by double newlines or bullet points
-function splitSectionEntries(section: string, content: string): { title: string, content: string }[] {
-  // For Work Experience, Projects, Education, split by double newlines or bullets
-  if (["Experience", "Projects", "Education"].includes(section)) {
-    // Try to split by double newlines or lines starting with a dash/bullet
-    const entries = content.split(/\n\n|\n[-•*]/).map(e => e.trim()).filter(e => e.length > 30);
-    return entries.map((entry, i) => ({ title: `${section} Entry ${i + 1}`, content: entry }));
-  }
-  // For Skills, split by comma or line
-  if (section === "Skills") {
-    const skills = content.split(/,|\n/).map(s => s.trim()).filter(s => s.length > 2);
-    return [{ title: "Skills", content: skills.join(", ") }];
-  }
-  // For Summary or other, just one entry
-  return [{ title: section, content }];
-}
 
 function extractSections(text: string) {
   const sections = [
@@ -132,6 +117,13 @@ export async function POST(req: NextRequest) {
     const uploadedFile = Array.isArray(file) ? file[0] : file;
     const filePath = uploadedFile.filepath || uploadedFile.path;
     const fileType = uploadedFile.mimetype || uploadedFile.type;
+    const fileName = uploadedFile.originalFilename || uploadedFile.name || 'resume.pdf';
+
+    // Upload to S3
+    const fileBuffer = await readFile(filePath);
+    const resumeId = uuidv4();
+    const s3Key = `resumes/${userId}/${resumeId}/${fileName}`;
+    const s3Url = await uploadToS3(fileBuffer, s3Key, fileType);
 
     let text = '';
     if (fileType === 'application/pdf') {
@@ -147,13 +139,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unsupported file type.' }, { status: 400 });
     }
 
-    // 1. Create a resume row
-    const resumeId = uuidv4();
+    // 1. Create a resume row with S3 URL
     await db.insert(resumes).values({
       id: resumeId,
       userId,
       resumeText: text,
       slug: resumeId,
+      s3Url,
+      fileName,
     });
 
     // 2. Parse into sections
@@ -167,21 +160,37 @@ export async function POST(req: NextRequest) {
         resumeId,
         sectionName: sec.section,
       });
-      // 2b. Split section into entries (subsections)
-      const entries = splitSectionEntries(sec.section, sec.content);
-      for (const entry of entries) {
-        const [vector] = await embeddings.embedDocuments([entry.content]);
-        await db.insert(resumeSubsections).values({
-          id: uuidv4(),
-          sectionId,
-          title: entry.title,
-          content: entry.content,
-          embedding: vector,
-        });
+      
+      // 2b. Split section into improved subsections using new processing
+      const subsections = splitSectionIntoSubsections(sec.section, sec.content);
+      
+      for (const subsection of subsections) {
+        try {
+          // Generate embedding for the cleaned content
+          const [vector] = await embeddings.embedDocuments([subsection.content]);
+          
+          // Format and validate the embedding
+          const formattedEmbedding = formatEmbedding(vector);
+          
+          await db.insert(resumeSubsections).values({
+            id: uuidv4(),
+            sectionId,
+            title: subsection.title,
+            content: subsection.content,
+            embedding: formattedEmbedding,
+          });
+        } catch (error) {
+          console.error(`Error processing subsection "${subsection.title}":`, error);
+          // Continue with other subsections even if one fails
+        }
       }
     }
 
-    return NextResponse.json({ success: true, message: 'Resume processed, sections and subsections embedded and stored!', resumeId });
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Resume processed with improved text preprocessing. Sections and subsections embedded and stored!', 
+      resumeId 
+    });
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json({ error: 'Failed to process resume.' }, { status: 500 });

@@ -1,6 +1,6 @@
 {
-  "id": "0ae63c36-51aa-4d55-a513-3f51c977b63d",
-  "prevId": "23828f25-6cf5-4259-b908-5794e432d7b3",
+  "id": "ce6ea34b-3c4a-429e-a296-3a58996efb50",
+  "prevId": "0ae63c36-51aa-4d55-a513-3f51c977b63d",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -151,14 +151,14 @@
           "primaryKey": false,
           "notNull": true
         },
-        "original_file_name": {
-          "name": "original_file_name",
+        "s3_url": {
+          "name": "s3_url",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "original_file_key": {
-          "name": "original_file_key",
+        "file_name": {
+          "name": "file_name",
           "type": "text",
           "primaryKey": false,
           "notNull": false

@@ -1,5 +1,5 @@
 {
-  "name": "askresumeai",
+  "name": "ressumate",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -11,18 +11,27 @@
     "drizzle:migrate": "drizzle-kit migrate --config=drizzle.config.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.842.0",
+    "@aws-sdk/s3-request-presigner": "^3.842.0",
     "@langchain/community": "^0.3.47",
     "@langchain/openai": "^0.5.16",
     "@neondatabase/serverless": "^1.0.1",
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^3.0.2",
+    "clsx": "^2.1.1",
     "drizzle-orm": "^0.44.2",
     "formidable": "^3.5.4",
     "langchain": "^0.3.29",
+    "lucide-react": "^0.525.0",
     "mammoth": "^1.9.1",
     "next": "15.3.4",
+    "openai": "^4.104.0",
     "pdf-parse": "^1.1.1",
     "pg": "^8.16.3",
+    "puppeteer": "^24.11.2",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

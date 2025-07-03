@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { resumeSections, resumeSubsections } from '@/db/schema';
-import { OpenAIEmbeddings } from '@langchain/openai';
+import { resumeSections, resumeSubsections, resumes, users } from '@/db/schema';
+import { OpenAIEmbeddings, ChatOpenAI } from '@langchain/openai';
 import { eq } from 'drizzle-orm';
 
 function cosineSimilarity(a: number[], b: number[]) {
@@ -17,6 +17,24 @@ export async function POST(req: NextRequest) {
     if (!resumeId || !question) {
       return NextResponse.json({ error: 'Missing resumeId or question.' }, { status: 400 });
     }
+
+    // Get resume and user information for personalization
+    const resumeInfo = await db
+      .select({
+        resumeText: resumes.resumeText,
+        userName: users.name,
+        userEmail: users.email,
+      })
+      .from(resumes)
+      .innerJoin(users, eq(resumes.userId, users.id))
+      .where(eq(resumes.id, resumeId))
+      .limit(1);
+
+    if (resumeInfo.length === 0) {
+      return NextResponse.json({ error: 'Resume not found.' }, { status: 404 });
+    }
+
+    const { resumeText, userName, userEmail } = resumeInfo[0];
 
     // Embed the question
     const embeddings = new OpenAIEmbeddings({});
@@ -50,10 +68,66 @@ export async function POST(req: NextRequest) {
 
     // Sort by similarity, descending
     scored.sort((a, b) => b.score - a.score);
-    const topSubsections = scored.slice(0, 3);
+
+    // If the question is about current role, always include the most recent job entry
+    const isCurrentRoleQuestion = /current role|present role|current position|present position|current job|present job|current responsibilities|present responsibilities/i.test(question);
+
+    let topSubsections = scored.slice(0, 3);
+
+    if (isCurrentRoleQuestion) {
+      // Find the most recent job entry in Work Experience/Professional Experience
+      const workSections = ["Experience", "Work Experience", "Professional Experience"];
+      // Find the scored version (with score property)
+      const mostRecentJob = scored.find(sub => workSections.includes(sub.sectionName));
+      if (mostRecentJob) {
+        // If not already in topSubsections, add it at the top
+        if (!topSubsections.some(s => s.title === mostRecentJob.title && s.content === mostRecentJob.content)) {
+          topSubsections = [mostRecentJob, ...topSubsections.slice(0, 2)];
+        } else {
+          // Move it to the top if present
+          topSubsections = [mostRecentJob, ...topSubsections.filter(s => s !== mostRecentJob).slice(0, 2)];
+        }
+      }
+    }
+
+    // Generate conversational AI response
+    const chatModel = new ChatOpenAI({
+      modelName: "gpt-3.5-turbo",
+      temperature: 0.7, // Higher temperature for more conversational responses
+      maxTokens: 200,
+    });
+
+    const relevantContent = topSubsections
+      .map(sub => `${sub.sectionName}: ${sub.content}`)
+      .join('\n\n');
+
+    const prompt = `You are ${userName}, a professional candidate having a conversation with a recruiter. The recruiter just asked: "${question}"
+
+Based on your resume information below, provide a natural, conversational response as if you're speaking directly to them. Be confident, enthusiastic, and authentic. Use "I" statements and speak in first person.
+
+Your resume information:
+${relevantContent}
+
+Respond naturally as ${userName} would in a real conversation. Keep it concise (2-3 sentences) but make it feel personal and engaging.`;
+
+    const response = await chatModel.invoke([
+      {
+        role: "system",
+        content: `You are ${userName}, a professional candidate. Respond naturally and conversationally as if you're speaking directly to a recruiter. Be confident, authentic, and use first-person perspective. Make your responses feel personal and engaging, not robotic.`
+      },
+      {
+        role: "user",
+        content: prompt
+      }
+    ]);
+
+    const summary = response.content?.toString().trim() || 'I appreciate your question, but I need to review my information to give you a proper answer.';
 
     return NextResponse.json({
-      topSubsections: topSubsections.map(s => ({ section: s.sectionName, title: s.title, content: s.content, score: s.score })),
+      summary,
+      question,
+      relevantSections: topSubsections.map(s => s.sectionName),
+      candidateName: userName,
     });
   } catch (error) {
     console.error('Q&A error:', error);

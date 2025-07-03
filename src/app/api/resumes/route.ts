@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'userId is required.' }, { status: 400 });
     }
     const userResumes = await db
-      .select({ id: resumes.id, slug: resumes.slug, createdAt: resumes.createdAt })
+      .select({ id: resumes.id, slug: resumes.slug, createdAt: resumes.createdAt, fileName: resumes.fileName })
       .from(resumes)
       .where(eq(resumes.userId, userId))
       .orderBy(desc(resumes.createdAt));
