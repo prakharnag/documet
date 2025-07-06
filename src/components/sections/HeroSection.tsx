@@ -18,20 +18,19 @@ const HeroSection = () => {
           <div className="space-y-8">
             <div className="space-y-4">
               <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
-                Turn Your Resume Into an
+                Turn Your Document Into an
                 <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> AI Assistant</span>
               </h1>
               
               <p className="text-xl text-gray-600 leading-relaxed">
-                Upload your resume and create an intelligent assistant that answers recruiter questions 24/7. 
-                Share your personalized link and let AI showcase your skills while you sleep.
+                Upload your document and let AI handle questions, explanations, and support for your team, clients, or anyone - 24/7.
               </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
               <Button variant="hero" size="lg" className="group" onClick={() => router.push('/login')}>
                 <Upload className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                Upload Resume & Get Started
+                Upload Document & Get Started
                 <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
               
@@ -63,8 +62,8 @@ const HeroSection = () => {
               <div className="w-full h-96 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                 <div className="text-center text-white">
                   <Sparkles className="w-16 h-16 mx-auto mb-4" />
-                  <h3 className="text-2xl font-bold mb-2">AI Resume Assistant</h3>
-                  <p className="text-blue-100">Your intelligent career companion</p>
+                  <h3 className="text-2xl font-bold mb-2">AI Document Assistant</h3>
+                  <p className="text-blue-100">Your intelligent document companion</p>
                 </div>
               </div>
             </div>

@@ -12,7 +12,7 @@ interface QAAnswer {
   error?: string;
 }
 
-interface Resume {
+interface Document {
   id: string;
   slug: string;
   createdAt: string;
@@ -31,35 +31,35 @@ const predefinedQuestions = [
 
 export default function TestPage() {
   const [userId, setUserId] = useState('');
-  const [resumes, setResumes] = useState<Resume[]>([]);
-  const [resumeId, setResumeId] = useState('');
+  const [Documents, setDocuments] = useState<Document[]>([]);
+  const [DocumentId, setDocumentId] = useState('');
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState<QAAnswer | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showResumeSelector, setShowResumeSelector] = useState(true);
+  const [showDocumentSelector, setShowDocumentSelector] = useState(true);
 
-  const fetchResumes = async () => {
+  const fetchDocuments = async () => {
     if (!userId) return;
     
     try {
-      const response = await fetch(`/api/resumes/list?userId=${userId}`);
+      const response = await fetch(`/api/Documents/list?userId=${userId}`);
       const data = await response.json();
-      setResumes(data.resumes || []);
+      setDocuments(data.Documents || []);
     } catch (error) {
-      console.error('Error fetching resumes:', error);
+      console.error('Error fetching Documents:', error);
     }
   };
 
   const testQA = async (selectedQuestion?: string) => {
     const questionToAsk = selectedQuestion || question;
-    if (!resumeId || !questionToAsk) return;
+    if (!DocumentId || !questionToAsk) return;
     
     setLoading(true);
     try {
       const response = await fetch('/api/qa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resumeId, question: questionToAsk })
+        body: JSON.stringify({ DocumentId, question: questionToAsk })
       });
       
       const data = await response.json();
@@ -80,7 +80,7 @@ export default function TestPage() {
     testQA();
   };
 
-  if (showResumeSelector) {
+  if (showDocumentSelector) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center py-8">
         <div className="w-full max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl border border-gray-200">
@@ -91,15 +91,15 @@ export default function TestPage() {
                 <Bot className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">Test Your AI Resume Assistant</h1>
-                <p className="text-sm text-gray-600">Select a resume to test the Q&A functionality</p>
+                <h1 className="text-xl font-semibold text-gray-900">Test Your AI Document Assistant</h1>
+                <p className="text-sm text-gray-600">Select a Document to test the Q&A functionality</p>
               </div>
             </div>
           </div>
 
           <div className="p-6">
             <div className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Step 1: Get Resume ID</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Step 1: Get Document ID</h2>
               <div className="flex gap-4 mb-4">
                 <input
                   type="text"
@@ -108,29 +108,29 @@ export default function TestPage() {
                   onChange={(e) => setUserId(e.target.value)}
                   className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
                 />
-                <Button onClick={fetchResumes}>Fetch Resumes</Button>
+                <Button onClick={fetchDocuments}>Fetch Documents</Button>
               </div>
             </div>
             
-            {resumes.length > 0 && (
+            {Documents.length > 0 && (
               <div className="space-y-3">
-                <h3 className="font-medium text-gray-900">Your Resumes:</h3>
-                {resumes.map((resume: Resume) => (
-                  <div key={resume.id} className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <h3 className="font-medium text-gray-900">Your Documents:</h3>
+                {Documents.map((Document: Document) => (
+                  <div key={Document.id} className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
                     <div className="flex justify-between items-center">
                       <div>
-                        <p className="font-medium text-gray-900">ID: {resume.id}</p>
-                        <p className="text-sm text-gray-600">Slug: {resume.slug}</p>
-                        <p className="text-sm text-gray-600">Created: {new Date(resume.createdAt).toLocaleDateString()}</p>
+                        <p className="font-medium text-gray-900">ID: {Document.id}</p>
+                        <p className="text-sm text-gray-600">Slug: {Document.slug}</p>
+                        <p className="text-sm text-gray-600">Created: {new Date(Document.createdAt).toLocaleDateString()}</p>
                       </div>
                       <Button 
                         onClick={() => {
-                          setResumeId(resume.id);
-                          setShowResumeSelector(false);
+                          setDocumentId(Document.id);
+                          setShowDocumentSelector(false);
                         }}
                         className="bg-blue-600 hover:bg-blue-700"
                       >
-                        Test This Resume
+                        Test This Document
                       </Button>
                     </div>
                   </div>
@@ -153,17 +153,17 @@ export default function TestPage() {
               <Bot className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">AI Resume Assistant Tester</h1>
+              <h1 className="text-xl font-semibold text-gray-900">AI Document Assistant Tester</h1>
               <p className="text-sm text-gray-600">Test your AI assistant with different questions</p>
             </div>
           </div>
           <div className="flex space-x-2">
             <Button 
               variant="outline" 
-              onClick={() => setShowResumeSelector(true)}
+              onClick={() => setShowDocumentSelector(true)}
               className="border-gray-300 hover:bg-gray-50"
             >
-              Change Resume
+              Change Document
             </Button>
             <Button 
               variant="outline" 

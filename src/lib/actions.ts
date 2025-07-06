@@ -3,57 +3,57 @@
 import { verifyNeonToken } from "@/lib/neon-auth";
 import { getUserDetails } from "@/lib/neon-auth";
 import { db } from "@/db";
-import { resumes } from "@/db/schema";
+import { Documents } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-export async function createResume(formData: FormData, token: string) {
+export async function createDocument(formData: FormData, token: string) {
   // Verify the token
   const user = await verifyNeonToken(token);
   if (!user) {
     throw new Error("Unauthorized");
   }
 
-  const resumeText = formData.get("resumeText") as string;
+  const DocumentText = formData.get("DocumentText") as string;
   const slug = formData.get("slug") as string;
 
   try {
-    const newResume = await db.insert(resumes).values({
+    const newDocument = await db.insert(Documents).values({
       userId: user.id,
-      resumeText,
+      DocumentText,
       slug,
     }).returning();
     
-    return { success: true, resume: newResume[0] };
+    return { success: true, Document: newDocument[0] };
   } catch (error) {
-    throw new Error("Failed to create resume");
+    throw new Error("Failed to create Document");
   }
 }
 
-export async function getUserResumes(token: string) {
+export async function getUserDocuments(token: string) {
   const user = await verifyNeonToken(token);
   if (!user) {
     throw new Error("Unauthorized");
   }
 
-  const userResumes = await db
+  const userDocuments = await db
     .select()
-    .from(resumes)
-    .where(eq(resumes.userId, user.id));
+    .from(Documents)
+    .where(eq(Documents.userId, user.id));
     
-  return userResumes;
+  return userDocuments;
 }
 
-export async function deleteResume(resumeId: string, token: string) {
+export async function deleteDocument(DocumentId: string, token: string) {
   const user = await verifyNeonToken(token);
   if (!user) {
     throw new Error("Unauthorized");
   }
 
-  // Delete resume (ensuring it belongs to the user)
-  const deletedResume = await db
-    .delete(resumes)
-    .where(eq(resumes.id, resumeId) && eq(resumes.userId, user.id))
+  // Delete Document (ensuring it belongs to the user)
+  const deletedDocument = await db
+    .delete(Documents)
+    .where(eq(Documents.id, DocumentId) && eq(Documents.userId, user.id))
     .returning();
     
-  return deletedResume[0];
+  return deletedDocument[0];
 } 

@@ -7,7 +7,7 @@ const GetStarted = () => {
   const router = useRouter();
 
   const handleGetStarted = () => {
-    router.push('/login');
+    router.push('/handler/sign-in');
   };
 
   return (

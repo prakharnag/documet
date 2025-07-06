@@ -1,4 +1,5 @@
 import { Bot, Twitter, Linkedin, Github, Mail } from "lucide-react";
+import Logo from "@/components/ui/logo";
 
 const Footer = () => {
   return (
@@ -7,14 +8,9 @@ const Footer = () => {
         <div className="grid md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <Bot className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-lg font-bold text-gray-900">Ressumate</span>
-            </div>
+            <Logo size="md" />
             <p className="text-gray-600 text-sm">
-              Transforming resumes into intelligent AI assistants for better jobseeker-recruiter connections.
+              Transforming Documents into intelligent AI assistants for better knowledge sharing and connections.
             </p>
             <div className="flex gap-3">
               <a href="#" className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors">
@@ -65,11 +61,11 @@ const Footer = () => {
 
         <div className="border-t border-gray-200 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-sm text-gray-600">
-            © 2024 Ressumate. All rights reserved.
+            © 2024 Documet. All rights reserved.
           </p>
           <div className="flex items-center gap-2 mt-4 md:mt-0">
             <Mail className="w-4 h-4 text-gray-600" />
-            <span className="text-sm text-gray-600">hello@ressumate.com</span>
+            <span className="text-sm text-gray-600">hello@Documet.com</span>
           </div>
         </div>
       </div>

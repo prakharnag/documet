@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Share2, Copy, Check, MessageSquare, Link } from 'lucide-react';
 
 interface ShareModalProps {
-  resumeId: string;
-  resumeTitle: string;
+  DocumentId: string;
+  DocumentTitle: string;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -18,7 +18,7 @@ interface ShareData {
   candidateEmail: string;
 }
 
-export default function ShareModal({ resumeId, resumeTitle, isOpen, onClose }: ShareModalProps) {
+export default function ShareModal({ DocumentId, DocumentTitle, isOpen, onClose }: ShareModalProps) {
   const [customMessage, setCustomMessage] = useState('');
   const [shareData, setShareData] = useState<ShareData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -28,11 +28,11 @@ export default function ShareModal({ resumeId, resumeTitle, isOpen, onClose }: S
   const generateShareLink = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/resumes/share', {
+      const response = await fetch('/api/Documents/share', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          resumeId, 
+          DocumentId, 
           customMessage: customMessage.trim() || undefined 
         })
       });
@@ -82,8 +82,8 @@ export default function ShareModal({ resumeId, resumeTitle, isOpen, onClose }: S
               <Share2 className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">Share Your AI Resume</h3>
-              <p className="text-sm text-gray-500">{resumeTitle}</p>
+              <h3 className="font-semibold text-gray-900">Share Your AI Document</h3>
+              <p className="text-sm text-gray-500">{DocumentTitle}</p>
             </div>
           </div>
           <Button
@@ -111,7 +111,7 @@ export default function ShareModal({ resumeId, resumeTitle, isOpen, onClose }: S
                 <textarea
                   value={customMessage}
                   onChange={(e) => setCustomMessage(e.target.value)}
-                  placeholder="Hi! I'd love to share my AI-powered resume with you. You can ask me any questions about my experience, skills, or background, and I'll respond just like we're having a real conversation. Feel free to explore!"
+                  placeholder="Hi! I'd love to share my AI-powered Document with you. You can ask me any questions from the document, and I'll respond just like we're having a real conversation. Feel free to explore!"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 resize-none"
                   rows={4}
                   maxLength={500}
@@ -151,7 +151,7 @@ export default function ShareModal({ resumeId, resumeTitle, isOpen, onClose }: S
                   </h4>
                 </div>
                 <p className="text-sm text-green-700">
-                  Your AI resume assistant is now ready to share with recruiters.
+                  Your AI Document assistant is now ready to share with Anyone.
                 </p>
               </div>
 
@@ -208,9 +208,9 @@ export default function ShareModal({ resumeId, resumeTitle, isOpen, onClose }: S
                   How to Share
                 </h4>
                 <ul className="text-sm text-blue-700 space-y-1">
-                  <li>• Copy the link and send it directly to recruiters</li>
+                  <li>• Copy the link and send it directly to Anyone</li>
                   <li>• Or copy the full message + link for a complete introduction</li>
-                  <li>• Recruiters can ask questions and download your resume</li>
+                  <li>• Anyone can ask questions and download your Document</li>
                   <li>• Your AI assistant will respond conversationally as you</li>
                 </ul>
               </div>

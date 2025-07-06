@@ -1,5 +1,5 @@
 /**
- * Text processing utilities for resume content preprocessing
+ * Text processing utilities for Document content preprocessing
  */
 
 // Clean and normalize text content

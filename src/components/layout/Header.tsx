@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Bot, Menu, X, GraduationCap } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Logo from "@/components/ui/logo";
 
 const scrollToSection = (id: string) => {
   const el = document.getElementById(id);
@@ -21,15 +22,7 @@ const Header = () => {
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <Bot className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex flex-col gap-0">
-              <span className="text-xl font-bold text-gray-900">Ressumate</span>
-              <span className="text-sm font-medium text-gray-500">Make your resume an intelligent, shareable assistant</span>
-            </div>
-          </div>
+          <Logo size="xl" />
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
@@ -46,7 +39,7 @@ const Header = () => {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-3">
-            <Button variant="default" size="sm" onClick={() => router.push('/login')}>
+            <Button variant="default" size="sm" onClick={() => router.push('/handler/sign-in')}>
               <GraduationCap className="w-4 h-4 mr-2" />
               Get Started
             </Button>
@@ -90,7 +83,7 @@ const Header = () => {
               </a>
               
               <div className="flex flex-col gap-3 pt-4 border-t border-gray-200">
-                <Button variant="default" size="sm" className="justify-start" onClick={() => { setIsMenuOpen(false); router.push('/login'); }}>
+                <Button variant="default" size="sm" className="justify-start" onClick={() => { setIsMenuOpen(false); router.push('/handler/sign-in'); }}>
                   <GraduationCap className="w-4 h-4 mr-2" />
                   Get Started
                 </Button>

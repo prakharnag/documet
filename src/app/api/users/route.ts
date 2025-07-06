@@ -82,7 +82,7 @@ export async function DELETE(req: NextRequest) {
     if (!valid) {
       return NextResponse.json({ error: 'Incorrect password.' }, { status: 401 });
     }
-    // Delete user (cascades to resumes via DB schema)
+    // Delete user (cascades to Documents via DB schema)
     await db.delete(users).where(eq(users.id, userId));
     return NextResponse.json({ message: 'Account deleted successfully.' });
   } catch (error) {
