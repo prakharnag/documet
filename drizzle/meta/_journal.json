@@ -57,6 +57,13 @@
       "when": 1751687476071,
       "tag": "0007_high_black_tom",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1751942863505,
+      "tag": "0008_far_toad_men",
+      "breakpoints": true
     }
   ]
 }

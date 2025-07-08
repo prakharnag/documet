@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, timestamp, jsonb, boolean } from 'drizzle-orm/pg-core';
 
 export const Documents = pgTable('Documents', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -24,4 +24,14 @@ export const DocumentSubsections = pgTable('Document_subsections', {
   content: text('content').notNull(),
   embedding: jsonb('embedding').notNull(),
   createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const Waitlist = pgTable('waitlist', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  email: text('email').notNull().unique(),
+  name: text('name'),
+  source: text('source').default('landing_page'),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
 });

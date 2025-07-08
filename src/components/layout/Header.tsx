@@ -25,17 +25,7 @@ const Header = () => {
           <Logo size="xl" />
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
-            <button className="text-gray-600 hover:text-gray-900 transition-colors bg-transparent border-none outline-none cursor-pointer" onClick={() => scrollToSection('cta')}>
-              How It Works
-            </button>
-            <button className="text-gray-600 hover:text-gray-900 transition-colors bg-transparent border-none outline-none cursor-pointer" onClick={() => scrollToSection('benefits')}>
-              Benefits
-            </button>
-            <a href="#demo" className="text-gray-600 hover:text-gray-900 transition-colors">
-              Demo
-            </a>
-          </nav>
+          
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-3">
@@ -62,18 +52,6 @@ const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-gray-200">
             <nav className="flex flex-col gap-4">
-              <button 
-                className="text-gray-600 hover:text-gray-900 transition-colors py-2 bg-transparent border-none outline-none cursor-pointer text-left"
-                onClick={() => { setIsMenuOpen(false); scrollToSection('cta'); }}
-              >
-                How It Works
-              </button>
-              <button 
-                className="text-gray-600 hover:text-gray-900 transition-colors py-2 bg-transparent border-none outline-none cursor-pointer text-left"
-                onClick={() => { setIsMenuOpen(false); scrollToSection('benefits'); }}
-              >
-                Benefits
-              </button>
               <a 
                 href="#demo" 
                 className="text-gray-600 hover:text-gray-900 transition-colors py-2"
@@ -81,7 +59,6 @@ const Header = () => {
               >
                 Demo
               </a>
-              
               <div className="flex flex-col gap-3 pt-4 border-t border-gray-200">
                 <Button variant="default" size="sm" className="justify-start" onClick={() => { setIsMenuOpen(false); router.push('/handler/sign-in'); }}>
                   <GraduationCap className="w-4 h-4 mr-2" />
