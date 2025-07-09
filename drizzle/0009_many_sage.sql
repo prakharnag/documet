@@ -1,0 +1,1 @@
+ALTER TABLE "Document_subsections" DROP COLUMN "embedding";

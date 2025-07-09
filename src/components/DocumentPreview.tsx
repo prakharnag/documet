@@ -5,9 +5,10 @@ import { useState, useEffect } from 'react';
 interface DocumentPreviewProps {
   documentId: string;
   fileName?: string | null;
+  s3Url?: string | null; // Add optional s3Url prop
 }
 
-export default function DocumentPreview({ documentId, fileName }: DocumentPreviewProps) {
+export default function DocumentPreview({ documentId, fileName, s3Url }: DocumentPreviewProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,8 +36,16 @@ export default function DocumentPreview({ documentId, fileName }: DocumentPrevie
       }
     };
 
-    fetchPreviewUrl();
-  }, [documentId]);
+    // If s3Url is provided, use it directly (no API call needed)
+    if (s3Url) {
+      setPreviewUrl(s3Url);
+      setLoading(false);
+      console.log('Using cached S3 URL for preview:', s3Url);
+    } else {
+      // Only make API call if s3Url is not provided
+      fetchPreviewUrl();
+    }
+  }, [documentId, s3Url]);
 
   if (loading) {
     return (

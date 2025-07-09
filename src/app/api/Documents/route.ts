@@ -4,6 +4,8 @@ import { db } from "@/db";
 import { Documents } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import AWS from 'aws-sdk';
+import { EmbeddingService } from '@/lib/embeddings';
+import { getSignedDownloadUrl } from '@/lib/s3';
 
 export async function GET(req: NextRequest) {
   try {
@@ -23,7 +25,25 @@ export async function GET(req: NextRequest) {
       .from(Documents)
       .where(eq(Documents.userId, user.id))
       .orderBy(desc(Documents.createdAt));
-    return NextResponse.json({ Documents: userDocuments });
+
+    // Generate signed URLs for each document
+    const documentsWithSignedUrls = await Promise.all(
+      userDocuments.map(async (doc) => {
+        if (doc.s3Url) {
+          try {
+            const s3Key = doc.s3Url.split('.amazonaws.com/')[1];
+            const signedUrl = await getSignedDownloadUrl(s3Key);
+            return { ...doc, s3Url: signedUrl };
+          } catch (error) {
+            console.error('Failed to generate signed URL for document:', doc.id, error);
+            return doc;
+          }
+        }
+        return doc;
+      })
+    );
+
+    return NextResponse.json({ Documents: documentsWithSignedUrls });
   } catch (error) {
     console.error('List Documents error:', error);
     return NextResponse.json({ error: 'Failed to list Documents.' }, { status: 500 });
@@ -91,6 +111,21 @@ export async function DELETE(req: NextRequest) {
         console.error('S3 deletion error:', s3Error);
         // Continue with database deletion even if S3 fails
       }
+    }
+
+    // Delete vectors from Pinecone
+    try {
+      const namespace = `user_${user.id}`;
+      const deleteResult = await EmbeddingService.deleteVectorsByDocument(documentId, namespace);
+      
+      if (deleteResult.success) {
+        console.log(`Deleted ${deleteResult.vectorsDeleted} vectors from Pinecone for document ${documentId}`);
+      } else {
+        console.error('Failed to delete vectors from Pinecone:', deleteResult.error);
+      }
+    } catch (pineconeError) {
+      console.error('Pinecone deletion error:', pineconeError);
+      // Continue with database deletion even if Pinecone fails
     }
 
     // Delete document from database (cascades to sections and subsections)

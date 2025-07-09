@@ -22,7 +22,6 @@ export const DocumentSubsections = pgTable('Document_subsections', {
   sectionId: uuid('section_id').notNull().references(() => DocumentSections.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
   content: text('content').notNull(),
-  embedding: jsonb('embedding').notNull(),
   createdAt: timestamp('created_at').defaultNow(),
 });
 

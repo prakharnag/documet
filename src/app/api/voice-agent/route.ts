@@ -1,113 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { EmbeddingService } from '@/lib/embeddings';
 
 export async function POST(req: NextRequest) {
-  const { userInput, documentContext, documentTitle, conversationHistory } = await req.json();
+  const { query, documentId, userId } = await req.json();
   
   try {
-
-    if (!userInput) {
-      return NextResponse.json({ error: 'User input required' }, { status: 400 });
+    if (!query || !documentId || !userId) {
+      return NextResponse.json({ error: 'Query, documentId, and userId are required' }, { status: 400 });
     }
 
-    // Build conversation context
-    const context = conversationHistory?.join('\n') || '';
+    // Search for relevant content in Pinecone
+    const namespace = `user_${userId}`;
+    const searchResult = await EmbeddingService.searchSimilarDocuments(
+      query,
+      3, // Get top 3 most relevant chunks
+      namespace
+    );
     
-    // Check if user wants to end conversation
-    const endingPhrases = ['bye', 'goodbye', 'thank you', 'thanks', 'that\'s all', 'no more questions', 'see you later'];
-    const isEnding = endingPhrases.some(phrase => userInput.toLowerCase().includes(phrase));
-    
-    const systemPrompt = `You are a helpful document assistant for "${documentTitle}". 
-
-Key behaviors:
-- Answer questions directly and clearly
-- Keep responses concise (1-2 sentences max)
-- Be helpful and informative
-- Reference specific parts of the document when relevant
-- If asked about something not in the document, politely redirect to what IS available
-- DO NOT ask follow-up questions unless specifically requested
-- Simply answer what was asked
-${isEnding ? '- The user is ending the conversation, respond with a friendly goodbye' : ''}
-
-Document content: ${documentContext}
-
-Previous conversation:
-${context}
-
-Answer the user's question directly and concisely.`;
-
-    // Call Groq API (ultra-fast and free)
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama3-8b-8192', // Reliable model
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userInput }
-        ],
-        max_tokens: 150,
-        temperature: 0.7
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Groq API error details:', errorText);
-      throw new Error(`Groq API error: ${response.status} - ${errorText}`);
+    if (!searchResult.success || !searchResult.results) {
+      return NextResponse.json({ 
+        response: "I couldn't find relevant information in your document for that question.",
+        context: ''
+      });
     }
 
-    const data = await response.json();
-    const aiResponse = data.choices[0]?.message?.content || 'I need a moment to process that.';
+    // Filter to only include chunks from this specific document
+    const relevantChunks = searchResult.results.filter(
+      (result: any) => result.metadata.document_id === documentId
+    );
+    
+    if (relevantChunks.length === 0) {
+      return NextResponse.json({ 
+        response: "I couldn't find specific information about that in this document.",
+        context: ''
+      });
+    }
+
+    // Combine relevant chunks as context
+    const context = relevantChunks
+      .map((chunk: any) => chunk.metadata.text)
+      .join('\n\n');
 
     return NextResponse.json({ 
-      response: aiResponse,
-      model: 'groq-llama-3.1-70b',
-      processingTime: 'ultra-fast',
-      shouldEndConversation: isEnding
+      response: "Here's the relevant information from your document:",
+      context: context.substring(0, 2000), // Limit context size for Vapi
+      chunks: relevantChunks.length
     });
 
   } catch (error) {
-    console.error('Groq API failed, trying OpenAI fallback:', error);
-    
-    // Fallback to OpenAI if Groq fails
-    try {
-      const fallbackResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
-          messages: [
-            { role: 'system', content: `You are a helpful document assistant for "${documentTitle}". Answer questions directly and clearly. Keep responses concise (1-2 sentences max). DO NOT ask follow-up questions. Document content: ${documentContext}` },
-            { role: 'user', content: userInput }
-          ],
-          max_tokens: 150,
-          temperature: 0.7
-        })
-      });
-      
-      if (fallbackResponse.ok) {
-        const fallbackData = await fallbackResponse.json();
-        const aiResponse = fallbackData.choices[0]?.message?.content || 'I need a moment to process that.';
-        
-        return NextResponse.json({ 
-          response: aiResponse,
-          model: 'openai-fallback',
-          processingTime: 'fallback'
-        });
-      }
-    } catch (fallbackError) {
-      console.error('OpenAI fallback also failed:', fallbackError);
-    }
-    
+    console.error('Voice agent API error:', error);
     return NextResponse.json({ 
-      response: 'I encountered a technical issue. Could you try asking again?',
+      response: 'I encountered an issue accessing your document. Please try again.',
+      context: '',
       error: true 
-    }, { status: 200 });
+    }, { status: 500 });
   }
 }

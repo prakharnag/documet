@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 // @ts-ignore
 import formidable from 'formidable';
 import fs from 'fs';
-import { OpenAIEmbeddings } from '@langchain/openai';
 import mammoth from 'mammoth';
 import { promisify } from 'util';
 import { Readable } from 'stream';
@@ -10,19 +9,9 @@ import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { db } from '@/db';
 import { Documents, DocumentSections, DocumentSubsections } from '@/db/schema';
 import { v4 as uuidv4 } from 'uuid';
-import { splitSectionIntoSubsections, formatEmbedding } from '@/lib/text-processing';
 import { uploadToS3 } from '@/lib/s3';
 import { stackServerApp } from '@/stack';
-import { nlpProcessor } from '@/lib/nlp-processor';
-
-// // Try/catch PDFLoader import to avoid runtime error if module is missing
-// let PDFLoader: any;
-// try {
-//   // @ts-ignore
-//   PDFLoader = require("@langchain/community/document_loaders/fs/pdf").PDFLoader;
-// } catch (e) {
-//   PDFLoader = null;
-// }
+import { EmbeddingService } from '@/lib/embeddings';
 
 export const config = {
   api: {
@@ -32,48 +21,56 @@ export const config = {
 
 const readFile = promisify(fs.readFile);
 
-function extractSections(text: string) {
-  // Split text into paragraphs for better analysis
-  const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 20);
+function createChunks(text: string, maxChunkSize: number = 1500, overlap: number = 200) {
+  // Clean the text but preserve all content
+  const cleanText = text
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
   
-  // If document is short, treat as single section
-  if (paragraphs.length <= 3) {
-    return [{ section: 'Main Content', content: text.trim() }];
+  if (cleanText.length <= maxChunkSize) {
+    return [cleanText];
   }
   
-  // Dynamic section detection based on content patterns
-  const sections: { section: string; content: string }[] = [];
-  let currentSection = 'Introduction';
-  let currentContent: string[] = [];
+  const chunks: string[] = [];
+  let start = 0;
   
-  for (const paragraph of paragraphs) {
-    const trimmed = paragraph.trim();
+  while (start < cleanText.length) {
+    let end = start + maxChunkSize;
     
-    // Detect section headers (short lines, often capitalized)
-    if (trimmed.length < 50 && /^[A-Z][A-Za-z\s]{2,}$/.test(trimmed)) {
-      // Save previous section
-      if (currentContent.length > 0) {
-        sections.push({ 
-          section: currentSection, 
-          content: currentContent.join('\n\n').trim() 
-        });
+    // If we're not at the end of the text, try to break at a sentence or paragraph
+    if (end < cleanText.length) {
+      // Look for paragraph break first
+      const paragraphBreak = cleanText.lastIndexOf('\n\n', end);
+      if (paragraphBreak > start + maxChunkSize * 0.5) {
+        end = paragraphBreak + 2;
+      } else {
+        // Look for sentence break
+        const sentenceBreak = cleanText.lastIndexOf('. ', end);
+        if (sentenceBreak > start + maxChunkSize * 0.5) {
+          end = sentenceBreak + 2;
+        } else {
+          // Look for any whitespace
+          const spaceBreak = cleanText.lastIndexOf(' ', end);
+          if (spaceBreak > start + maxChunkSize * 0.5) {
+            end = spaceBreak + 1;
+          }
+        }
       }
-      currentSection = trimmed;
-      currentContent = [];
-    } else {
-      currentContent.push(trimmed);
     }
+    
+    const chunk = cleanText.slice(start, end).trim();
+    if (chunk.length > 0) {
+      chunks.push(chunk);
+    }
+    
+    // Move start position with overlap
+    start = end - overlap;
+    if (start >= cleanText.length) break;
   }
   
-  // Add final section
-  if (currentContent.length > 0) {
-    sections.push({ 
-      section: currentSection, 
-      content: currentContent.join('\n\n').trim() 
-    });
-  }
-  
-  return sections.filter(s => s.content.length > 30);
+  return chunks.filter(chunk => chunk.length > 50); // Only filter very short chunks
 }
 
 function nodeRequestFromNextRequest(req: NextRequest) {
@@ -147,96 +144,51 @@ export async function POST(req: NextRequest) {
       fileName,
     });
 
-    // 2. Process document with fast extraction (NLP optional)
-    console.log('Processing document sections...');
-    let processedSections;
+    // 2. Process document with improved chunking
+    console.log('Processing document with smart chunking...');
+    console.log(`Original text length: ${text.length} characters`);
     
-    try {
-      // Try fast processing first
-      processedSections = extractSections(text).map(sec => ({
-        title: sec.section,
-        content: sec.content,
-        summary: sec.content.substring(0, 200) + '...',
-        keywords: sec.content.toLowerCase().match(/\b\w{4,}\b/g)?.slice(0, 5) || [],
-        importance: 1
-      }));
-    } catch (error) {
-      console.error('Fast processing failed, using basic extraction:', error);
-      processedSections = [{
-        title: 'Document Content',
-        content: text,
-        summary: text.substring(0, 300) + '...',
-        keywords: [],
-        importance: 1
-      }];
-    }
+    // Create chunks with overlap for better context preservation
+    const chunks = createChunks(text, 1500, 200);
+    console.log(`Created ${chunks.length} chunks for embedding`);
     
-    const embeddings = new OpenAIEmbeddings({});
+    // Log chunk sizes for debugging
+    chunks.forEach((chunk, i) => {
+      console.log(`Chunk ${i + 1}: ${chunk.length} characters`);
+    });
     
-    for (const section of processedSections) {
-      try {
-        // 2a. Create a section row with enhanced data
-        const sectionId = uuidv4();
-        await db.insert(DocumentSections).values({
-          id: sectionId,
-          DocumentId,
-          sectionName: section.title,
-        });
-        
-        // 2b. Create simplified subsections for faster processing
-        const subsections = [
-          {
-            title: section.title,
-            content: section.content,
-            type: 'main'
-          }
-        ];
-        
-        for (const subsection of subsections) {
-          try {
-            // Chunk content if too long (max ~6000 chars for embeddings)
-            const maxChunkSize = 6000;
-            const chunks = [];
-            
-            if (subsection.content.length <= maxChunkSize) {
-              chunks.push(subsection.content);
-            } else {
-              // Split into chunks
-              for (let i = 0; i < subsection.content.length; i += maxChunkSize) {
-                chunks.push(subsection.content.substring(i, i + maxChunkSize));
-              }
-            }
-            
-            // Process each chunk
-            for (let i = 0; i < chunks.length; i++) {
-              const chunk = chunks[i];
-              const chunkTitle = chunks.length > 1 ? `${subsection.title} - Part ${i + 1}` : subsection.title;
-              
-              const [vector] = await embeddings.embedDocuments([chunk]);
-              const formattedEmbedding = formatEmbedding(vector);
-              
-              await db.insert(DocumentSubsections).values({
-                id: uuidv4(),
-                sectionId,
-                title: chunkTitle,
-                content: chunk,
-                embedding: formattedEmbedding,
-              });
-            }
-          } catch (error) {
-            console.error(`Error processing subsection "${subsection.title}":`, error);
-          }
-        }
-      } catch (error) {
-        console.error(`Error processing section "${section.title}":`, error);
+    // Prepare chunks for Pinecone storage
+    const pineconeChunks = chunks.map((chunk, index) => ({
+      id: `${DocumentId}_chunk_${index}`,
+      text: chunk,
+      metadata: {
+        filename: fileName,
+        user_id: userId,
+        chunk_id: `${DocumentId}_chunk_${index}`,
+        document_id: DocumentId,
+        chunk_index: index,
+        total_chunks: chunks.length,
       }
+    }));
+    
+    // Store embeddings in Pinecone
+    const namespace = `user_${userId}`;
+    const embeddingResult = await EmbeddingService.storeEmbeddingsWithText(pineconeChunks, namespace);
+    
+    if (!embeddingResult.success) {
+      throw new Error(`Failed to store embeddings: ${embeddingResult.error}`);
     }
+    
+    // All chunks and embeddings are stored in Pinecone only
+    console.log(`Successfully stored ${chunks.length} chunks in Pinecone namespace: ${namespace}`);
 
     return NextResponse.json({ 
       success: true, 
       message: 'Document processed and stored successfully!', 
       DocumentId,
-      sectionsProcessed: processedSections.length
+      chunksProcessed: chunks.length,
+      vectorsStored: embeddingResult.vectorsStored,
+      namespace
     });
   } catch (error) {
     console.error('Upload error:', error);

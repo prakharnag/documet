@@ -8,18 +8,18 @@ import Vapi from '@vapi-ai/web';
 interface VoiceChatProps {
   DocumentId: string;
   DocumentTitle: string;
+  userId?: string;
 }
 
-export default function VoiceChat({ DocumentId, DocumentTitle }: VoiceChatProps) {
+export default function VoiceChat({ DocumentId, DocumentTitle, userId }: VoiceChatProps) {
   const [isActive, setIsActive] = useState(false);
-  const [status, setStatus] = useState('Ready to start');
+  const [status, setStatus] = useState('');
   const vapiRef = useRef<any>(null);
 
   const startVoiceAgent = async () => {
     try {
-      setStatus('Starting Vapi voice agent...');
       
-      // Get document context
+      // Get document context first
       const docResponse = await fetch(`/api/Documents/public/${DocumentId}`);
       const docData = await docResponse.json();
       
@@ -29,44 +29,41 @@ export default function VoiceChat({ DocumentId, DocumentTitle }: VoiceChatProps)
       
       vapi.on('call-start', () => {
         setIsActive(true);
-        setStatus('Voice agent active - speak naturally!');
+        
+        // Send document context as system message after call starts
+        setTimeout(() => {
+          vapi.send({
+            type: 'add-message',
+            message: {
+              role: 'system',
+              content: `You are answering questions about the document "${DocumentTitle}". Here is the document content: ${docData.DocumentText?.substring(0, 3000) || 'Document content not available'}`
+            }
+          });
+        }, 1000);
       });
       
       vapi.on('call-end', () => {
         setIsActive(false);
-        setStatus('Voice agent stopped');
       });
       
       vapi.on('error', (error: any) => {
         console.error('Vapi error:', error);
         setStatus('Voice agent error');
+        setIsActive(false);
       });
-      
-      // Start Vapi call with assistant ID and document context
-      const assistantOverrides = {
-        recordingEnabled: false,
+
+      // Start Vapi call with assistant ID
+      await vapi.start('a89ca1bc-cf62-4cb6-9e1d-d2c2fdcf053a', {
         variableValues: {
           documentTitle: DocumentTitle,
-          documentContent: docData.DocumentText?.substring(0, 3000) || ''
+          documentId: DocumentId
         }
-      };
-      
-      await vapi.start('a89ca1bc-cf62-4cb6-9e1d-d2c2fdcf053a', assistantOverrides);
-      
-      // Send document context as system message
-      setTimeout(() => {
-        vapi.send({
-          type: 'add-message',
-          message: {
-            role: 'system',
-            content: `You are answering questions about the document "${DocumentTitle}". Document content: ${docData.DocumentText?.substring(0, 2000) || ''}`
-          }
-        });
-      }, 1000);
+      });
       
     } catch (error) {
       console.error('Vapi start error:', error);
       setStatus('Failed to start voice agent');
+      setIsActive(false);
     }
   };
 
@@ -75,7 +72,6 @@ export default function VoiceChat({ DocumentId, DocumentTitle }: VoiceChatProps)
       vapiRef.current.stop();
     }
     setIsActive(false);
-    setStatus('Voice agent stopped');
   };
 
   useEffect(() => {
@@ -93,21 +89,26 @@ export default function VoiceChat({ DocumentId, DocumentTitle }: VoiceChatProps)
           onClick={startVoiceAgent}
           variant="outline"
           size="sm"
-          className="flex items-center gap-2 border-gray-300 hover:bg-gray-50"
+          className="flex items-center gap-2 whitespace-nowrap"
         >
           <Phone className="w-4 h-4" />
-          <span>Voice Agent</span>
+          Voice Agent
         </Button>
       ) : (
         <Button
           onClick={stopVoiceAgent}
           variant="outline"
           size="sm"
-          className="flex items-center gap-2 bg-green-50 border-green-300 text-green-700"
+          className="flex items-center gap-2 bg-green-50 border-green-300 text-green-700 whitespace-nowrap"
         >
           <PhoneOff className="w-4 h-4" />
-          <span>Stop Voice</span>
+          Stop
         </Button>
+      )}
+      {status && (
+        <div className="absolute top-full mt-1 text-xs text-gray-600 whitespace-nowrap">
+          {status}
+        </div>
       )}
     </div>
   );

@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { Documents, DocumentSections, DocumentSubsections } from '@/db/schema';
-import { OpenAIEmbeddings, ChatOpenAI } from '@langchain/openai';
+import { Documents } from '@/db/schema';
+import { ChatOpenAI } from '@langchain/openai';
 import { eq } from 'drizzle-orm';
-
-function cosineSimilarity(a: number[], b: number[]) {
-  const dot = a.reduce((sum, ai, i) => sum + ai * b[i], 0);
-  const normA = Math.sqrt(a.reduce((sum, ai) => sum + ai * ai, 0));
-  const normB = Math.sqrt(b.reduce((sum, bi) => sum + bi * bi, 0));
-  return dot / (normA * normB);
-}
+import { EmbeddingService } from '@/lib/embeddings';
+import { stackServerApp } from '@/stack';
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,11 +13,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing DocumentId or question.' }, { status: 400 });
     }
 
+    // Get authenticated user
+    const user = await stackServerApp.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Not authenticated.' }, { status: 401 });
+    }
+
     // Get document info
     const documentInfo = await db
       .select({
         DocumentText: Documents.DocumentText,
         fileName: Documents.fileName,
+        userId: Documents.userId,
       })
       .from(Documents)
       .where(eq(Documents.id, DocumentId))
@@ -32,51 +34,49 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Document not found.' }, { status: 404 });
     }
 
-    const { DocumentText, fileName } = documentInfo[0];
+    const { DocumentText, fileName, userId } = documentInfo[0];
 
-    // Embed the question
-    const embeddings = new OpenAIEmbeddings({});
-    const [questionEmbedding] = await embeddings.embedDocuments([question]);
+    // Check if user has access to this document
+    if (user.id !== userId) {
+      return NextResponse.json({ error: 'Access denied.' }, { status: 403 });
+    }
 
-    // Fetch all subsections for this document
-    const subsections = await db
-      .select({
-        sectionName: DocumentSections.sectionName,
-        title: DocumentSubsections.title,
-        content: DocumentSubsections.content,
-        embedding: DocumentSubsections.embedding,
-      })
-      .from(DocumentSubsections)
-      .innerJoin(DocumentSections, eq(DocumentSubsections.sectionId, DocumentSections.id))
-      .where(eq(DocumentSections.DocumentId, DocumentId));
+    // Search for relevant chunks using Pinecone
+    const namespace = `user_${userId}`;
+    const searchResult = await EmbeddingService.searchSimilarDocuments(
+      question,
+      5, // topK
+      namespace
+    );
 
-    // Compute similarity for each subsection
-    const scored = subsections.map(sub => {
-      let embedding: number[];
-      if (Array.isArray(sub.embedding)) {
-        embedding = sub.embedding as number[];
-      } else if (typeof sub.embedding === 'object' && sub.embedding !== null) {
-        embedding = Object.values(sub.embedding).map(Number);
-      } else {
-        embedding = [];
-      }
-      const score = cosineSimilarity(questionEmbedding, embedding);
-      return { ...sub, score };
-    });
+    if (!searchResult.success) {
+      return NextResponse.json({ error: 'Failed to search document.' }, { status: 500 });
+    }
 
-    // Sort by similarity and get top 3 most relevant sections
-    scored.sort((a, b) => b.score - a.score);
-    const topSubsections = scored.slice(0, 3);
+    // Filter results to only include chunks from this specific document
+    const relevantChunks = searchResult.results?.filter(
+      (result: any) => result.metadata.document_id === DocumentId
+    ) || [];
 
-    // Generate AI response using GPT-4 with better reasoning
+    if (relevantChunks.length === 0) {
+      return NextResponse.json({
+        summary: "I couldn't find specific information about that in this document. Could you try rephrasing your question or ask about something else?",
+        question,
+        relevantSections: [],
+        documentName: fileName,
+        confidence: 0,
+      });
+    }
+
+    // Generate AI response using GPT-4
     const chatModel = new ChatOpenAI({
       modelName: "gpt-4",
       temperature: 0.7,
       maxTokens: 250,
     });
 
-    const relevantContent = topSubsections
-      .map(sub => `Section: ${sub.sectionName}\nContent: ${sub.content}`)
+    const relevantContent = relevantChunks
+      .map((chunk: any) => chunk.metadata.text)
       .join('\n\n');
 
     const systemPrompt = `You are a helpful document assistant. Answer questions directly and naturally based on the document content.
@@ -107,9 +107,10 @@ Answer the question directly using the information above. Be helpful and convers
     return NextResponse.json({
       summary,
       question,
-      relevantSections: topSubsections.map(s => s.sectionName),
+      relevantSections: relevantChunks.map((chunk: any) => `Chunk ${chunk.metadata.chunk_index + 1}`),
       documentName: fileName,
-      confidence: topSubsections[0]?.score || 0,
+      confidence: relevantChunks[0]?.score || 0,
+      chunksFound: relevantChunks.length,
     });
   } catch (error) {
     console.error('Q&A error:', error);

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { Documents } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { getSignedDownloadUrl } from '@/lib/s3';
 
 export async function GET(
   req: NextRequest,
@@ -22,6 +23,7 @@ export async function GET(
         DocumentText: Documents.DocumentText,
         createdAt: Documents.createdAt,
         fileName: Documents.fileName,
+        s3Url: Documents.s3Url,
       })
       .from(Documents)
       .where(eq(Documents.slug, slug))
@@ -31,7 +33,18 @@ export async function GET(
       return NextResponse.json({ error: 'Document not found.' }, { status: 404 });
     }
 
-    const { id, slug: DocumentSlug, DocumentText, createdAt, fileName } = DocumentInfo[0];
+    const { id, slug: DocumentSlug, DocumentText, createdAt, fileName, s3Url } = DocumentInfo[0];
+
+    // Generate signed URL if s3Url exists
+    let signedUrl = s3Url;
+    if (s3Url) {
+      try {
+        const s3Key = s3Url.split('.amazonaws.com/')[1];
+        signedUrl = await getSignedDownloadUrl(s3Key);
+      } catch (error) {
+        console.error('Failed to generate signed URL:', error);
+      }
+    }
 
     return NextResponse.json({
       id,
@@ -39,6 +52,7 @@ export async function GET(
       DocumentText,
       fileName,
       createdAt,
+      s3Url: signedUrl,
     });
   } catch (error) {
     console.error('Public Document fetch error:', error);

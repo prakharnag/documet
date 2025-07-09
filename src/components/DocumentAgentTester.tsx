@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useUser } from '@stackframe/stack';
 import { Button } from '@/components/ui/button';
 import { Bot, Send, Share, Mic, MicOff, Volume2, Sparkles, Download, FileText } from 'lucide-react';
 import DocumentPreview from './DocumentPreview';
@@ -43,7 +44,68 @@ const defaultQuestions = [
   "Are there any important warnings or notes?"
 ];
 
+// Helper functions for localStorage caching
+const getCachedSummary = (docId: string): string | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem(`summary_${docId}`);
+  } catch (error) {
+    console.error('Error reading cached summary:', error);
+    return null;
+  }
+};
+
+const getCachedQuestions = (docId: string): string[] | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const cached = localStorage.getItem(`topQuestions_${docId}`);
+    return cached ? JSON.parse(cached) : null;
+  } catch (error) {
+    console.error('Error reading cached questions:', error);
+    return null;
+  }
+};
+
+const getCachedDocumentData = (docId: string): {s3Url?: string; DocumentText?: string} | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const cached = localStorage.getItem(`documentData_${docId}`);
+    return cached ? JSON.parse(cached) : null;
+  } catch (error) {
+    console.error('Error reading cached document data:', error);
+    return null;
+  }
+};
+
+const setCachedSummary = (docId: string, summary: string): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(`summary_${docId}`, summary);
+  } catch (error) {
+    console.error('Error caching summary:', error);
+  }
+};
+
+const setCachedQuestions = (docId: string, questions: string[]): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(`topQuestions_${docId}`, JSON.stringify(questions));
+  } catch (error) {
+    console.error('Error caching questions:', error);
+  }
+};
+
+const setCachedDocumentData = (docId: string, data: {s3Url?: string; DocumentText?: string}): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(`documentData_${docId}`, JSON.stringify(data));
+  } catch (error) {
+    console.error('Error caching document data:', error);
+  }
+};
+
 export default function DocumentAgentTester({ DocumentId, DocumentTitle, defaultOpen = false, welcomeMessage, showInitialSummary, documentData }: DocumentAgentTesterProps) {
+  const user = useUser();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputQuestion, setInputQuestion] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -204,20 +266,25 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
   };
 
   const fetchDocumentData = async () => {
-    if (!documentData) {
-      try {
-        // Fetch document details directly using the DocumentId
-        const detailResponse = await fetch(`/api/Documents/public/${DocumentId}`);
-        const detailData = await detailResponse.json();
-        if (detailData) {
-          setFetchedDocumentData({
-            s3Url: detailData.s3Url,
-            DocumentText: detailData.DocumentText
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching document data:', error);
+    const cachedData = getCachedDocumentData(DocumentId);
+    if (cachedData) {
+      setFetchedDocumentData(cachedData);
+      return;
+    }
+
+    try {
+      // Fetch document details directly using the DocumentId
+      const detailResponse = await fetch(`/api/Documents/public/${DocumentId}`);
+      const detailData = await detailResponse.json();
+      if (detailData) {
+        setFetchedDocumentData({
+          s3Url: detailData.s3Url,
+          DocumentText: detailData.DocumentText
+        });
+        setCachedDocumentData(DocumentId, detailData);
       }
+    } catch (error) {
+      console.error('Error fetching document data:', error);
     }
   };
 
@@ -233,12 +300,16 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
       const data = await response.json();
       if (data.summary) {
         setInitialSummary(data.summary);
+        setCachedSummary(DocumentId, data.summary);
       }
       if (data.questions && data.questions.length > 0) {
         setTopQuestions(data.questions);
+        setCachedQuestions(DocumentId, data.questions);
       } else {
         // Fallback to default questions if API doesn't return any
-        setTopQuestions(defaultQuestions.slice(0, 3));
+        const fallbackQuestions = defaultQuestions.slice(0, 3);
+        setTopQuestions(fallbackQuestions);
+        setCachedQuestions(DocumentId, fallbackQuestions);
       }
     } catch (error) {
       console.error('Error generating initial summary:', error);
@@ -250,12 +321,32 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
   useEffect(() => {
     if (isOpen) {
       resetChat(); // Clear previous messages when opening
-      if (!documentData) {
+      
+      // Check for cached document data first
+      const cachedDocumentData = getCachedDocumentData(DocumentId);
+      if (cachedDocumentData) {
+        setFetchedDocumentData(cachedDocumentData);
+      } else if (!documentData) {
         fetchDocumentData();
       }
+      
       fetchQuestions();
       if (showInitialSummary) {
-        generateInitialSummary();
+        // Try to load from cache first
+        const cachedSummary = getCachedSummary(DocumentId);
+        const cachedQuestions = getCachedQuestions(DocumentId);
+        
+        if (cachedSummary) {
+          setInitialSummary(cachedSummary);
+        }
+        if (cachedQuestions) {
+          setTopQuestions(cachedQuestions);
+        }
+        
+        // Only fetch from API if we don't have cached data
+        if (!cachedSummary || !cachedQuestions) {
+          generateInitialSummary();
+        }
       }
     }
   }, [isOpen, showInitialSummary, documentData]);
@@ -298,7 +389,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
             >
               Clear Chat
             </Button>
-            <VoiceChat DocumentId={DocumentId} DocumentTitle={DocumentTitle} />
+            <VoiceChat DocumentId={DocumentId} DocumentTitle={DocumentTitle} userId={user?.id} />
             <Button
               onClick={() => setShareModalOpen(true)}
               variant="outline"
@@ -340,17 +431,20 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
               {topQuestions.length > 0 && (
                 <div className="space-y-3">
                   <h3 className="font-semibold text-gray-900">Top Questions</h3>
-                  {topQuestions.map((question, index) => (
-                    <Button
-                      key={index}
-                      variant="outline"
-                      onClick={() => handleSampleQuestion(question)}
-                      disabled={isLoading}
-                      className="w-full text-left justify-start h-auto py-3 px-4 text-sm text-gray-900 bg-white hover:bg-blue-50 border-gray-200 hover:border-blue-300"
-                    >
-                      {question}
-                    </Button>
-                  ))}
+                  <ul className="list-disc pl-6 space-y-2">
+                    {topQuestions.map((question, index) => (
+                      <li key={index}>
+                        <button
+                          type="button"
+                          onClick={() => handleSampleQuestion(question)}
+                          disabled={isLoading}
+                          className="text-blue-700 underline hover:text-blue-900 focus:outline-none focus:underline bg-transparent p-0 border-0 text-left cursor-pointer disabled:text-gray-400"
+                        >
+                          {question}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
 
@@ -464,7 +558,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
             <h1 className="text-2xl font-bold text-gray-900 mb-4">{DocumentTitle}</h1>
             <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
               {currentDocumentData?.s3Url ? (
-                <DocumentPreview documentId={DocumentId} fileName={DocumentTitle} />
+                <DocumentPreview documentId={DocumentId} fileName={DocumentTitle} s3Url={currentDocumentData.s3Url} />
               ) : currentDocumentData?.DocumentText ? (
                 <div className="p-4">
                   <pre className="whitespace-pre-wrap text-sm text-gray-700 font-mono leading-relaxed">
@@ -503,7 +597,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
               >
                 Clear Chat
               </Button>
-              <VoiceChat DocumentId={DocumentId} DocumentTitle={DocumentTitle} />
+              <VoiceChat DocumentId={DocumentId} DocumentTitle={DocumentTitle} userId={user?.id} />
               <Button
                 variant="outline"
                 size="sm"
@@ -544,17 +638,20 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
                 {topQuestions.length > 0 && (
                   <div className="space-y-3">
                     <h3 className="font-semibold text-gray-900">Top Questions</h3>
-                    {topQuestions.map((question, index) => (
-                      <Button
-                        key={index}
-                        variant="outline"
-                        onClick={() => handleSampleQuestion(question)}
-                        disabled={isLoading}
-                        className="w-full text-left justify-start h-auto py-3 px-4 text-sm text-gray-900 bg-white hover:bg-blue-50 border-gray-200 hover:border-blue-300"
-                      >
-                        {question}
-                      </Button>
-                    ))}
+                    <ul className="list-disc pl-6 space-y-2">
+                      {topQuestions.map((question, index) => (
+                        <li key={index}>
+                          <button
+                            type="button"
+                            onClick={() => handleSampleQuestion(question)}
+                            disabled={isLoading}
+                            className="text-blue-700 underline hover:text-blue-900 focus:outline-none focus:underline bg-transparent p-0 border-0 text-left cursor-pointer disabled:text-gray-400"
+                          >
+                            {question}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 
