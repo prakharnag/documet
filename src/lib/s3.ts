@@ -37,11 +37,17 @@ export const getPublicS3Url = (key: string): string => {
 };
 
 export const getSignedDownloadUrl = async (key: string): Promise<string> => {
+  // Validate key before processing
+  if (!key || key.trim() === '') {
+    console.error('❌ Empty S3 key provided');
+    throw new Error('S3 key cannot be empty');
+  }
+
   try {
     // Generate signed URL directly without head check to avoid permission issues
     const command = new GetObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET_NAME!,
-      Key: key,
+      Key: key.trim(),
     });
 
     const signedUrl = await getSignedUrl(s3Client, command, { 
@@ -51,8 +57,11 @@ export const getSignedDownloadUrl = async (key: string): Promise<string> => {
     return signedUrl;
   } catch (error) {
     console.error('❌ Signed URL generation failed:', error);
-    // Fallback to public URL
-    return getPublicS3Url(key);
+    // Fallback to public URL only if key is valid
+    if (key && key.trim()) {
+      return getPublicS3Url(key.trim());
+    }
+    throw error;
   }
 };
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import DocumentForm from '@/components/DocumentForm';
-import DocumentList, { DocumentListRef } from '@/components/DocumentList';
+import DocumentList from '@/components/DocumentList';
 import { Bot, Upload, MessageSquare, LogOut, User, Settings, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUser } from "@stackframe/stack";

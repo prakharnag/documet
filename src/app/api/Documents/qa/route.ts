@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
 
     // Generate AI response using GPT-4
     const chatModel = new ChatOpenAI({
-      modelName: "gpt-4",
+      modelName: "gpt-3.5-turbo",
       temperature: 0.7,
       maxTokens: 250,
     });

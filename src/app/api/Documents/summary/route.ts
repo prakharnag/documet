@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 
     // Generate summary and questions using GPT-4 for better accuracy
     const chatModel = new ChatOpenAI({
-      modelName: "gpt-4",
+      modelName: "gpt-3.5-turbo", // Use gpt-3.5-turbo for cost efficiency
       temperature: 0.3,
       maxTokens: 800,
     });

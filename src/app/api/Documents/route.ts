@@ -31,9 +31,21 @@ export async function GET(req: NextRequest) {
       userDocuments.map(async (doc) => {
         if (doc.s3Url) {
           try {
-            const s3Key = doc.s3Url.split('.amazonaws.com/')[1];
-            const signedUrl = await getSignedDownloadUrl(s3Key);
-            return { ...doc, s3Url: signedUrl };
+            // Handle both full URLs and S3 keys
+            let s3Key = doc.s3Url;
+            if (doc.s3Url.includes('.amazonaws.com/')) {
+              s3Key = doc.s3Url.split('.amazonaws.com/')[1];
+            }
+            
+            console.log('Processing S3 URL:', doc.s3Url, 'Using key:', s3Key);
+            
+            if (s3Key && s3Key.trim()) {
+              const signedUrl = await getSignedDownloadUrl(s3Key.trim());
+              return { ...doc, s3Url: signedUrl };
+            } else {
+              console.error('Empty S3 key:', doc.s3Url);
+              return doc;
+            }
           } catch (error) {
             console.error('Failed to generate signed URL for document:', doc.id, error);
             return doc;
