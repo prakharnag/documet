@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 
 interface DocumentFormProps {
   onUploadSuccess?: (document: any) => void;
-  refreshKey?: number;
 }
 
-export default function DocumentForm({ onUploadSuccess, refreshKey }: DocumentFormProps) {
+export default function DocumentForm({ onUploadSuccess }: DocumentFormProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -16,20 +15,7 @@ export default function DocumentForm({ onUploadSuccess, refreshKey }: DocumentFo
   const [DocumentCount, setDocumentCount] = useState<number>(0);
   const MAX_DocumentS = 5;
 
-  useEffect(() => {
-    async function fetchDocumentCount() {
-      try {
-        const res = await fetch(`/api/Documents`);
-        const data = await res.json();
-        if (res.ok && Array.isArray(data.Documents)) {
-          setDocumentCount(data.Documents.length);
-        }
-      } catch {}
-    }
-    fetchDocumentCount();
-  }, [onUploadSuccess, refreshKey]);
-
-  function handleDrag(e: React.DragEvent<HTMLDivElement>) {
+  const handleDrag = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     if (e.type === 'dragenter' || e.type === 'dragover') {
@@ -37,9 +23,9 @@ export default function DocumentForm({ onUploadSuccess, refreshKey }: DocumentFo
     } else if (e.type === 'dragleave') {
       setDragActive(false);
     }
-  }
+  };
 
-  async function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
@@ -47,14 +33,14 @@ export default function DocumentForm({ onUploadSuccess, refreshKey }: DocumentFo
     if (file) {
       await uploadFile(file);
     }
-  }
+  };
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       await uploadFile(file);
     }
-  }
+  };
 
   async function uploadFile(file: File) {
     if (DocumentCount >= MAX_DocumentS) {
@@ -68,7 +54,6 @@ export default function DocumentForm({ onUploadSuccess, refreshKey }: DocumentFo
       return;
     }
     setIsUploading(true);
-    setMessage(null);
     setFileName(file.name);
     const formData = new FormData();
     formData.append('Document', file);
@@ -119,14 +104,18 @@ export default function DocumentForm({ onUploadSuccess, refreshKey }: DocumentFo
         onDragOver={DocumentCount < MAX_DocumentS ? handleDrag : undefined}
         onDragLeave={DocumentCount < MAX_DocumentS ? handleDrag : undefined}
         onDrop={DocumentCount < MAX_DocumentS ? handleDrop : undefined}
-        onClick={() => DocumentCount < MAX_DocumentS && inputRef.current?.click()}
+        onClick={() => {
+          if (DocumentCount < MAX_DocumentS) {
+            inputRef.current?.click();
+          }
+        }}
         style={{ minHeight: 140, opacity: DocumentCount >= MAX_DocumentS ? 0.5 : 1, pointerEvents: DocumentCount >= MAX_DocumentS ? 'none' : 'auto' }}
       >
         <svg className="w-10 h-10 mb-2 text-blue-500" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 16v-8m0 0-3 3m3-3 3 3m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <p className="text-gray-700 mb-1">Drag & drop your PDF or Word doc here</p>
-        <p className="text-xs text-gray-500">or click to select a file (.pdf, .doc, .docx)</p>
+        <p className="text-gray-700 mb-1">Drag & drop your PDF</p>
+        <p className="text-xs text-gray-500">or click to select a file (Only PDF)</p>
         <input
           type="file"
           accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"

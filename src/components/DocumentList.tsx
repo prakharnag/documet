@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileText, Calendar, Copy, ExternalLink, Trash2 } from 'lucide-react';
 import DocumentAgentTester from './DocumentAgentTester';
@@ -9,6 +9,7 @@ import ShareModal from './ShareModal';
 interface DocumentListProps {
   documents: Document[];
   setDocuments: React.Dispatch<React.SetStateAction<Document[]>>;
+  loading: boolean;
 }
 
 interface Document {
@@ -20,34 +21,10 @@ interface Document {
   DocumentText?: string;
 }
 
-export default function DocumentList({ documents, setDocuments }: DocumentListProps) {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export default function DocumentList({ documents, setDocuments, loading }: DocumentListProps) {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [deletingDocument, setDeletingDocument] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchDocuments() {
-      setLoading(true);
-      setError(null);
-      try {
-        // User context is handled via Neon Auth session on the backend
-        const res = await fetch(`/api/Documents`);
-        const data = await res.json();
-        if (res.ok) {
-          setDocuments(data.Documents || []);
-        } else {
-          setError(data.error || 'Failed to fetch Documents.');
-        }
-      } catch (err) {
-        setError('Failed to fetch Documents.');
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchDocuments();
-  }, []); // Only load once on mount
 
   const copyDocumentId = (DocumentId: string) => {
     navigator.clipboard.writeText(DocumentId);
@@ -87,8 +64,20 @@ export default function DocumentList({ documents, setDocuments }: DocumentListPr
     }
   };
 
-  if (loading) return <div className="text-center py-8">Loading Documents...</div>;
-  if (error) return <div className="text-red-600 text-center py-8">{error}</div>;
+  if (loading) return (
+    <div className="space-y-4">
+      {[...Array(2)].map((_, i) => (
+        <div key={i} className="bg-white rounded-xl shadow-sm p-6 animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+          <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
+          <div className="space-y-2">
+            <div className="h-8 bg-gray-200 rounded"></div>
+            <div className="h-8 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
   if (documents.length === 0) return (
     <div className="text-center py-8 text-gray-500">
       <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />

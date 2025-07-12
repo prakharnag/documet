@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useUser } from '@stackframe/stack';
 import { Button } from '@/components/ui/button';
 import { Bot, Send, Share, Mic, MicOff, Volume2, Sparkles, Download, FileText } from 'lucide-react';
@@ -44,67 +44,14 @@ const defaultQuestions = [
   "Are there any important warnings or notes?"
 ];
 
-// Helper functions for localStorage caching
-const getCachedSummary = (docId: string): string | null => {
-  if (typeof window === 'undefined') return null;
-  try {
-    return localStorage.getItem(`summary_${docId}`);
-  } catch (error) {
-    console.error('Error reading cached summary:', error);
-    return null;
-  }
-};
-
-const getCachedQuestions = (docId: string): string[] | null => {
-  if (typeof window === 'undefined') return null;
-  try {
-    const cached = localStorage.getItem(`topQuestions_${docId}`);
-    return cached ? JSON.parse(cached) : null;
-  } catch (error) {
-    console.error('Error reading cached questions:', error);
-    return null;
-  }
-};
-
-const getCachedDocumentData = (docId: string): {s3Url?: string; DocumentText?: string} | null => {
-  if (typeof window === 'undefined') return null;
-  try {
-    const cached = localStorage.getItem(`documentData_${docId}`);
-    return cached ? JSON.parse(cached) : null;
-  } catch (error) {
-    console.error('Error reading cached document data:', error);
-    return null;
-  }
-};
-
-const setCachedSummary = (docId: string, summary: string): void => {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(`summary_${docId}`, summary);
-  } catch (error) {
-    console.error('Error caching summary:', error);
-  }
-};
-
-const setCachedQuestions = (docId: string, questions: string[]): void => {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(`topQuestions_${docId}`, JSON.stringify(questions));
-  } catch (error) {
-    console.error('Error caching questions:', error);
-  }
-};
-
-const setCachedDocumentData = (docId: string, data: {s3Url?: string; DocumentText?: string}): void => {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(`documentData_${docId}`, JSON.stringify(data));
-  } catch (error) {
-    console.error('Error caching document data:', error);
-  }
-};
-
-export default function DocumentAgentTester({ DocumentId, DocumentTitle, defaultOpen = false, welcomeMessage, showInitialSummary, documentData }: DocumentAgentTesterProps) {
+export default function DocumentAgentTester({ 
+  DocumentId, 
+  DocumentTitle, 
+  defaultOpen = false, 
+  welcomeMessage, 
+  showInitialSummary, 
+  documentData 
+}: DocumentAgentTesterProps) {
   const user = useUser();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputQuestion, setInputQuestion] = useState('');
@@ -120,13 +67,22 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceAgentActive, setVoiceAgentActive] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const resetChat = () => {
+  // Refs for cleanup
+  const recognitionRef = useRef<any>(null);
+  const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const currentDocumentData = documentData || fetchedDocumentData;
+
+  const resetChat = useCallback(() => {
     setMessages([]);
     setInputQuestion('');
-  };
+    setError(null);
+  }, []);
 
-  const startVoiceInput = () => {
+  const startVoiceInput = useCallback(() => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       alert('Voice recognition not supported in this browser');
       return;
@@ -134,6 +90,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
     
     recognition.continuous = false;
     recognition.interimResults = false;
@@ -154,12 +111,14 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
     };
     
     recognition.start();
-  };
+  }, []);
 
-  const speakResponse = (text: string) => {
+  const speakResponse = useCallback((text: string) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
+      speechRef.current = utterance;
+      
       utterance.rate = 0.9;
       utterance.pitch = 1;
       utterance.volume = 1;
@@ -169,16 +128,16 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
       
       window.speechSynthesis.speak(utterance);
     }
-  };
+  }, []);
 
-  const stopSpeaking = () => {
+  const stopSpeaking = useCallback(() => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
     }
-  };
+  }, []);
 
-  const addMessage = (type: 'user' | 'ai', content: string) => {
+  const addMessage = useCallback((type: 'user' | 'ai', content: string) => {
     const newMessage: Message = {
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type,
@@ -186,12 +145,13 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
       timestamp: new Date()
     };
     setMessages(prev => [...prev, newMessage]);
-  };
+  }, []);
 
-  const askQuestion = async (question: string) => {
+  const askQuestion = useCallback(async (question: string) => {
     if (!question.trim()) return;
 
     setIsLoading(true);
+    setError(null);
     addMessage('user', question);
 
     try {
@@ -207,7 +167,6 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
         addMessage('ai', `Error: ${data.error}`);
       } else {
         addMessage('ai', data.summary);
-        // No voice response for text input
       }
     } catch (error) {
       console.error('Error asking question:', error);
@@ -215,22 +174,22 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [DocumentId, addMessage]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (!isLoading && inputQuestion.trim()) {
       askQuestion(inputQuestion);
       setInputQuestion('');
     }
-  };
+  }, [isLoading, inputQuestion, askQuestion]);
 
-  const handleSampleQuestion = (question: string) => {
+  const handleSampleQuestion = useCallback((question: string) => {
     setInputQuestion(question);
     askQuestion(question);
-  };
+  }, [askQuestion]);
 
-  const handleDownload = async () => {
+  const handleDownload = useCallback(async () => {
     try {
       const res = await fetch(`/api/Documents/download/${DocumentId}`);
       const data = await res.json();
@@ -242,9 +201,9 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
     } catch (err) {
       alert('Failed to download document');
     }
-  };
+  }, [DocumentId]);
 
-  const fetchQuestions = async () => {
+  const fetchQuestions = useCallback(async () => {
     setQuestionsLoading(true);
     try {
       const response = await fetch('/api/Documents/questions', {
@@ -259,36 +218,29 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
       }
     } catch (error) {
       console.error('Error fetching questions:', error);
-      // Keep default questions if AI generation fails
     } finally {
       setQuestionsLoading(false);
     }
-  };
+  }, [DocumentId]);
 
-  const fetchDocumentData = async () => {
-    const cachedData = getCachedDocumentData(DocumentId);
-    if (cachedData) {
-      setFetchedDocumentData(cachedData);
-      return;
-    }
-
+  const fetchDocumentData = useCallback(async () => {
     try {
-      // Fetch document details directly using the DocumentId
       const detailResponse = await fetch(`/api/Documents/public/${DocumentId}`);
       const detailData = await detailResponse.json();
       if (detailData) {
-        setFetchedDocumentData({
+        const documentData = {
           s3Url: detailData.s3Url,
           DocumentText: detailData.DocumentText
-        });
-        setCachedDocumentData(DocumentId, detailData);
+        };
+        setFetchedDocumentData(documentData);
       }
     } catch (error) {
       console.error('Error fetching document data:', error);
+      setError('Failed to load document data');
     }
-  };
+  }, [DocumentId]);
 
-  const generateInitialSummary = async () => {
+  const generateInitialSummary = useCallback(async () => {
     setSummaryLoading(true);
     try {
       const response = await fetch('/api/Documents/summary', {
@@ -300,58 +252,52 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
       const data = await response.json();
       if (data.summary) {
         setInitialSummary(data.summary);
-        setCachedSummary(DocumentId, data.summary);
       }
       if (data.questions && data.questions.length > 0) {
         setTopQuestions(data.questions);
-        setCachedQuestions(DocumentId, data.questions);
       } else {
-        // Fallback to default questions if API doesn't return any
         const fallbackQuestions = defaultQuestions.slice(0, 3);
         setTopQuestions(fallbackQuestions);
-        setCachedQuestions(DocumentId, fallbackQuestions);
       }
     } catch (error) {
       console.error('Error generating initial summary:', error);
+      setError('Failed to generate summary');
     } finally {
       setSummaryLoading(false);
     }
-  };
+  }, [DocumentId]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      if (speechRef.current) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   useEffect(() => {
-    if (isOpen) {
-      resetChat(); // Clear previous messages when opening
+    if (isOpen && !dataLoaded) {
+      setDataLoaded(true);
+      resetChat();
       
-      // Check for cached document data first
-      const cachedDocumentData = getCachedDocumentData(DocumentId);
-      if (cachedDocumentData) {
-        setFetchedDocumentData(cachedDocumentData);
-      } else if (!documentData) {
+      if (!documentData || (!documentData.s3Url && !documentData.DocumentText)) {
         fetchDocumentData();
       }
       
       fetchQuestions();
       if (showInitialSummary) {
-        // Try to load from cache first
-        const cachedSummary = getCachedSummary(DocumentId);
-        const cachedQuestions = getCachedQuestions(DocumentId);
-        
-        if (cachedSummary) {
-          setInitialSummary(cachedSummary);
-        }
-        if (cachedQuestions) {
-          setTopQuestions(cachedQuestions);
-        }
-        
-        // Only fetch from API if we don't have cached data
-        if (!cachedSummary || !cachedQuestions) {
-          generateInitialSummary();
-        }
+        generateInitialSummary();
       }
     }
-  }, [isOpen, showInitialSummary, documentData]);
-
-  const currentDocumentData = documentData || fetchedDocumentData;
+    
+    if (!isOpen) {
+      setDataLoaded(false);
+    }
+  }, [isOpen, DocumentId, dataLoaded, documentData, showInitialSummary, resetChat, fetchDocumentData, fetchQuestions, generateInitialSummary]);
 
   if (!isOpen) {
     return (
@@ -375,10 +321,6 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-100">
           <div className="flex items-center gap-3">
             <Logo size="sm" />
-            <div>
-              <h3 className="font-semibold text-gray-900">AI Document Assistant</h3>
-              <p className="text-sm text-gray-500">{DocumentTitle}</p>
-            </div>
           </div>
           <div className="flex gap-2">
             <Button
@@ -413,17 +355,22 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
 
         {/* Initial Summary and Top Questions */}
         <div className="flex-1 p-6 overflow-y-auto">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
+              {error}
+            </div>
+          )}
+          
           {summaryLoading ? (
-            <div className="space-y-4">
-              <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-              <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
-              <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
+            <div className="flex items-center justify-center p-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <span className="ml-2 text-gray-600">Loading...</span>
             </div>
           ) : initialSummary ? (
             <div className="space-y-6">
               {/* Document Summary */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold text-blue-900 mb-2">Document Summary</h3>
+                <h3 className="font-semibold text-blue-900 mb-2">Summary</h3>
                 <p className="text-blue-800 text-sm leading-relaxed">{initialSummary}</p>
               </div>
 
@@ -549,7 +496,6 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
 
   // Original modal layout for dashboard
   return (
-    <>
     <div className="fixed inset-0 bg-opacity-30 backdrop-blur-sm z-50">
       <div className="w-full h-full bg-white rounded-none shadow-none border-none flex">
         {/* Left Side - Document Preview */}
@@ -558,7 +504,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
             <h1 className="text-2xl font-bold text-gray-900 mb-4">{DocumentTitle}</h1>
             <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
               {currentDocumentData?.s3Url ? (
-                <DocumentPreview documentId={DocumentId} fileName={DocumentTitle} s3Url={currentDocumentData.s3Url} />
+                <DocumentPreview documentId={DocumentId} fileName={DocumentTitle} />
               ) : currentDocumentData?.DocumentText ? (
                 <div className="p-4">
                   <pre className="whitespace-pre-wrap text-sm text-gray-700 font-mono leading-relaxed">
@@ -566,13 +512,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
                   </pre>
                 </div>
               ) : (
-                <div className="p-4">
-                  <div className="text-center text-gray-500 py-8">
-                    <Sparkles className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                    <p className="text-lg font-medium mb-2">Document Preview</p>
-                    <p className="text-sm">Document content will be displayed here</p>
-                  </div>
-                </div>
+                <DocumentPreview documentId={DocumentId} fileName={DocumentTitle} />
               )}
             </div>
           </div>
@@ -584,9 +524,6 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
           <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-100">
             <div className="flex items-center gap-3">
               <Logo size="sm" />
-              <div>
-                <p className="text-sm text-gray-500">{DocumentTitle}</p>
-              </div>
             </div>
             <div className="flex gap-2">
               <Button
@@ -620,17 +557,22 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
 
           {/* Main Content - Summary and Questions */}
           <div className="flex-1 p-6 overflow-y-auto">
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                {error}
+              </div>
+            )}
+            
             {summaryLoading ? (
-              <div className="space-y-4">
-                <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
-                <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
+              <div className="flex items-center justify-center p-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                <span className="ml-2 text-gray-600">Loading...</span>
               </div>
             ) : initialSummary ? (
               <div className="space-y-6">
                 {/* Document Summary */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h3 className="font-semibold text-blue-900 mb-2">Document Summary</h3>
+                  <h3 className="font-semibold text-blue-900 mb-2">Summary</h3>
                   <p className="text-blue-800 text-sm leading-relaxed">{initialSummary}</p>
                 </div>
 
@@ -744,15 +686,14 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
           </form>
         </div>
       </div>
+      
+      {/* Share Modal */}
+      <ShareModal
+        DocumentId={DocumentId}
+        DocumentTitle={DocumentTitle}
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+      />
     </div>
-    
-    {/* Share Modal */}
-    <ShareModal
-      DocumentId={DocumentId}
-      DocumentTitle={DocumentTitle}
-      isOpen={shareModalOpen}
-      onClose={() => setShareModalOpen(false)}
-    />
-    </>
   );
 } 

@@ -5,6 +5,7 @@ export const Documents = pgTable('Documents', {
   userId: text('user_id').notNull(),
   DocumentText: text('Document_text').notNull(),
   slug: text('slug').unique().notNull(),
+  pdfS3Url: text('pdf_s3_url'),
   s3Url: text('s3_url'),
   fileName: text('file_name'),
   createdAt: timestamp('created_at').defaultNow(),

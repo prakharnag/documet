@@ -44,10 +44,11 @@ export const getSignedDownloadUrl = async (key: string): Promise<string> => {
   }
 
   try {
-    // Generate signed URL directly without head check to avoid permission issues
+    // Generate signed URL for download
     const command = new GetObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET_NAME!,
       Key: key.trim(),
+      ResponseContentDisposition: 'attachment',
     });
 
     const signedUrl = await getSignedUrl(s3Client, command, { 
@@ -57,6 +58,52 @@ export const getSignedDownloadUrl = async (key: string): Promise<string> => {
     return signedUrl;
   } catch (error) {
     console.error('❌ Signed URL generation failed:', error);
+    // Fallback to public URL only if key is valid
+    if (key && key.trim()) {
+      return getPublicS3Url(key.trim());
+    }
+    throw error;
+  }
+};
+
+export const getSignedPreviewUrl = async (key: string, contentType?: string): Promise<string> => {
+  // Validate key before processing
+  if (!key || key.trim() === '') {
+    console.error('❌ Empty S3 key provided');
+    throw new Error('S3 key cannot be empty');
+  }
+
+  try {
+    // Use provided contentType or try to detect from S3 if not provided
+    let resolvedContentType = contentType;
+    if (!resolvedContentType) {
+      try {
+        const headCommand = new HeadObjectCommand({
+          Bucket: process.env.AWS_S3_BUCKET_NAME!,
+          Key: key.trim(),
+        });
+        const headResult = await s3Client.send(headCommand);
+        resolvedContentType = headResult.ContentType || 'application/octet-stream';
+      } catch (e) {
+        resolvedContentType = 'application/octet-stream';
+      }
+    }
+
+    // Generate signed URL for preview (inline viewing)
+    const command = new GetObjectCommand({
+      Bucket: process.env.AWS_S3_BUCKET_NAME!,
+      Key: key.trim(),
+      ResponseContentDisposition: 'inline',
+      ResponseContentType: resolvedContentType,
+    });
+
+    const signedUrl = await getSignedUrl(s3Client, command, { 
+      expiresIn: 3600 // 1 hour
+    });
+    
+    return signedUrl;
+  } catch (error) {
+    console.error('❌ Signed preview URL generation failed:', error);
     // Fallback to public URL only if key is valid
     if (key && key.trim()) {
       return getPublicS3Url(key.trim());

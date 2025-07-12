@@ -12,6 +12,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { uploadToS3 } from '@/lib/s3';
 import { stackServerApp } from '@/stack';
 import { EmbeddingService } from '@/lib/embeddings';
+import mime from 'mime-types';
+import { execFile } from 'child_process';
+import path from 'path';
+import util from 'util';
+const execFileAsync = util.promisify(execFile);
+
+// Use the full path to soffice for macOS, configurable via env
+const libreOfficePath = process.env.LIBREOFFICE_PATH || '/Applications/LibreOffice.app/Contents/MacOS/soffice';
 
 export const config = {
   api: {
@@ -114,12 +122,22 @@ export async function POST(req: NextRequest) {
     const fileType = uploadedFile.mimetype || uploadedFile.type;
     const fileName = uploadedFile.originalFilename || uploadedFile.name || 'Document.pdf';
 
+    // Infer content type from fileName using mime-types
+    let contentType = fileType;
+    if (fileName) {
+      const inferredType = mime.lookup(fileName);
+      if (inferredType) {
+        contentType = inferredType;
+      }
+    }
+
     // Upload to S3
     const fileBuffer = await readFile(filePath);
     const DocumentId = uuidv4();
     const s3Key = `Documents/${userId}/${DocumentId}/${fileName}`;
-    const s3Url = await uploadToS3(fileBuffer, s3Key, fileType);
+    const s3Url = await uploadToS3(fileBuffer, s3Key, contentType);
 
+    let pdfS3Url = null;
     let text = '';
     if (fileType === 'application/pdf') {
       const loader = new PDFLoader(filePath);
@@ -129,12 +147,32 @@ export async function POST(req: NextRequest) {
       fileType === 'application/msword' ||
       fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     ) {
+      // Convert DOCX/DOC to PDF using LibreOffice (soffice)
+      const outputDir = path.dirname(filePath);
+      await execFileAsync(libreOfficePath, [
+        '--headless',
+        '--convert-to', 'pdf',
+        '--outdir', outputDir,
+        filePath,
+      ]);
+      // Find the actual PDF file generated
+      const files = fs.readdirSync(outputDir);
+      console.log('Files in outputDir after conversion:', files);
+      const pdfFiles = files.filter(f => f.toLowerCase().endsWith('.pdf'));
+      if (pdfFiles.length === 0) {
+        throw new Error('PDF conversion failed: No PDF file found in output directory');
+      }
+      const pdfPath = path.join(outputDir, pdfFiles[0]);
+      const pdfBuffer = await readFile(pdfPath);
+      const pdfS3Key = `Documents/${userId}/${DocumentId}/${pdfFiles[0]}`;
+      pdfS3Url = await uploadToS3(pdfBuffer, pdfS3Key, 'application/pdf');
+      // Extract text from original docx/doc for embeddings
       text = await mammoth.extractRawText({ path: filePath }).then(res => res.value);
     } else {
       return NextResponse.json({ error: 'Unsupported file type.' }, { status: 400 });
     }
 
-    // 1. Create a Document row with S3 URL
+    // 1. Create a Document row with S3 URL and PDF S3 URL
     await db.insert(Documents).values({
       id: DocumentId,
       userId,
@@ -142,6 +180,7 @@ export async function POST(req: NextRequest) {
       slug: DocumentId,
       s3Url,
       fileName,
+      pdfS3Url, // Store PDF S3 URL for preview
     });
 
     // 2. Process document with improved chunking

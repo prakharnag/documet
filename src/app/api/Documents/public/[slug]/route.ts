@@ -24,6 +24,7 @@ export async function GET(
         createdAt: Documents.createdAt,
         fileName: Documents.fileName,
         s3Url: Documents.s3Url,
+        pdfS3Url: Documents.pdfS3Url,
       })
       .from(Documents)
       .where(eq(Documents.slug, slug))
@@ -33,16 +34,26 @@ export async function GET(
       return NextResponse.json({ error: 'Document not found.' }, { status: 404 });
     }
 
-    const { id, slug: DocumentSlug, DocumentText, createdAt, fileName, s3Url } = DocumentInfo[0];
+    const { id, slug: DocumentSlug, DocumentText, createdAt, fileName, s3Url, pdfS3Url } = DocumentInfo[0];
 
-    // Generate signed URL if s3Url exists
-    let signedUrl = s3Url;
-    if (s3Url) {
+    // Use PDF S3 URL for preview if available
+    let previewUrl = pdfS3Url || s3Url;
+    let signedUrl = previewUrl;
+    if (previewUrl && previewUrl.trim()) {
       try {
-        const s3Key = s3Url.split('.amazonaws.com/')[1];
-        signedUrl = await getSignedDownloadUrl(s3Key);
+        // Handle both full URLs and S3 keys
+        let s3Key = previewUrl;
+        if (previewUrl.includes('.amazonaws.com/')) {
+          s3Key = previewUrl.split('.amazonaws.com/')[1];
+        }
+        if (s3Key && s3Key.trim()) {
+          // Use preview URL for public preview
+          const { getSignedPreviewUrl } = await import('@/lib/s3');
+          signedUrl = await getSignedPreviewUrl(s3Key.trim());
+        }
       } catch (error) {
         console.error('Failed to generate signed URL:', error);
+        // Keep original previewUrl if signed URL generation fails
       }
     }
 

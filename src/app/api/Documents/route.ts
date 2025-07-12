@@ -5,7 +5,8 @@ import { Documents } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import AWS from 'aws-sdk';
 import { EmbeddingService } from '@/lib/embeddings';
-import { getSignedDownloadUrl } from '@/lib/s3';
+import { getSignedDownloadUrl, getSignedPreviewUrl } from '@/lib/s3';
+
 
 export async function GET(req: NextRequest) {
   try {
@@ -40,7 +41,8 @@ export async function GET(req: NextRequest) {
             console.log('Processing S3 URL:', doc.s3Url, 'Using key:', s3Key);
             
             if (s3Key && s3Key.trim()) {
-              const signedUrl = await getSignedDownloadUrl(s3Key.trim());
+              // Use preview URL for dashboard/document list
+              const signedUrl = await getSignedPreviewUrl(s3Key.trim());
               return { ...doc, s3Url: signedUrl };
             } else {
               console.error('Empty S3 key:', doc.s3Url);
@@ -112,8 +114,11 @@ export async function DELETE(req: NextRequest) {
           region: process.env.AWS_REGION,
         });
         
-        // Extract S3 key from URL
-        const s3Key = document[0].s3Url.split('.amazonaws.com/')[1];
+        // Extract S3 key from URL - handle both full URLs and S3 keys
+        let s3Key = document[0].s3Url;
+        if (document[0].s3Url.includes('.amazonaws.com/')) {
+          s3Key = document[0].s3Url.split('.amazonaws.com/')[1];
+        }
         
         await s3.deleteObject({
           Bucket: process.env.AWS_S3_BUCKET_NAME!,
@@ -148,6 +153,8 @@ export async function DELETE(req: NextRequest) {
     if (deleted.length === 0) {
       return NextResponse.json({ error: 'Document not found or access denied.' }, { status: 404 });
     }
+
+
 
     return NextResponse.json({ success: true, message: 'Document deleted successfully.' });
   } catch (error) {
