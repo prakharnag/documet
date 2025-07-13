@@ -100,7 +100,7 @@ export class EmbeddingService {
    */
   static async searchSimilarDocuments(
     query: string,
-    topK: number = 5,
+    topK: number = 10, // Increased from 5 to 10 for better retrieval
     namespace?: string
   ): Promise<{
     success: boolean;
@@ -305,4 +305,4 @@ export class EmbeddingService {
   }
 }
 
-export default EmbeddingService; 
+export default EmbeddingService;
