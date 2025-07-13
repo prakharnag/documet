@@ -44,11 +44,11 @@ const defaultQuestions = [
   "Are there any important warnings or notes?"
 ];
 
-// Helper functions for localStorage caching
+// Helper functions for sessionStorage caching
 const getCachedSummary = (docId: string): string | null => {
   if (typeof window === 'undefined') return null;
   try {
-    return localStorage.getItem(`summary_${docId}`);
+    return sessionStorage.getItem(`summary_${docId}`);
   } catch (error) {
     console.error('Error reading cached summary:', error);
     return null;
@@ -58,7 +58,7 @@ const getCachedSummary = (docId: string): string | null => {
 const getCachedQuestions = (docId: string): string[] | null => {
   if (typeof window === 'undefined') return null;
   try {
-    const cached = localStorage.getItem(`topQuestions_${docId}`);
+    const cached = sessionStorage.getItem(`topQuestions_${docId}`);
     return cached ? JSON.parse(cached) : null;
   } catch (error) {
     console.error('Error reading cached questions:', error);
@@ -69,7 +69,7 @@ const getCachedQuestions = (docId: string): string[] | null => {
 const getCachedDocumentData = (docId: string): {s3Url?: string; DocumentText?: string} | null => {
   if (typeof window === 'undefined') return null;
   try {
-    const cached = localStorage.getItem(`documentData_${docId}`);
+    const cached = sessionStorage.getItem(`documentData_${docId}`);
     return cached ? JSON.parse(cached) : null;
   } catch (error) {
     console.error('Error reading cached document data:', error);
@@ -80,7 +80,7 @@ const getCachedDocumentData = (docId: string): {s3Url?: string; DocumentText?: s
 const setCachedSummary = (docId: string, summary: string): void => {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(`summary_${docId}`, summary);
+    sessionStorage.setItem(`summary_${docId}`, summary);
   } catch (error) {
     console.error('Error caching summary:', error);
   }
@@ -89,7 +89,7 @@ const setCachedSummary = (docId: string, summary: string): void => {
 const setCachedQuestions = (docId: string, questions: string[]): void => {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(`topQuestions_${docId}`, JSON.stringify(questions));
+    sessionStorage.setItem(`topQuestions_${docId}`, JSON.stringify(questions));
   } catch (error) {
     console.error('Error caching questions:', error);
   }
@@ -98,7 +98,7 @@ const setCachedQuestions = (docId: string, questions: string[]): void => {
 const setCachedDocumentData = (docId: string, data: {s3Url?: string; DocumentText?: string}): void => {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(`documentData_${docId}`, JSON.stringify(data));
+    sessionStorage.setItem(`documentData_${docId}`, JSON.stringify(data));
   } catch (error) {
     console.error('Error caching document data:', error);
   }
