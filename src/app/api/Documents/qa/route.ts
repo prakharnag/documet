@@ -4,7 +4,6 @@ import { Documents } from '@/db/schema';
 import { ChatOpenAI } from '@langchain/openai';
 import { eq } from 'drizzle-orm';
 import { EmbeddingService } from '@/lib/embeddings';
-import { stackServerApp } from '@/stack';
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,13 +12,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing DocumentId or question.' }, { status: 400 });
     }
 
-    // Get authenticated user
-    const user = await stackServerApp.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Not authenticated.' }, { status: 401 });
-    }
-
-    // Get document info
+    // Get document info (no authentication)
     const documentInfo = await db
       .select({
         DocumentText: Documents.DocumentText,
@@ -35,11 +28,6 @@ export async function POST(req: NextRequest) {
     }
 
     const { DocumentText, fileName, userId } = documentInfo[0];
-
-    // Check if user has access to this document
-    if (user.id !== userId) {
-      return NextResponse.json({ error: 'Access denied.' }, { status: 403 });
-    }
 
     // Search for relevant chunks using Pinecone
     const namespace = `user_${userId}`;

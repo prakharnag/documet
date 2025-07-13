@@ -434,7 +434,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
                 <div className="space-y-3">
                   <h3 className="font-semibold text-gray-900">Top Questions</h3>
                   <ul className="list-disc pl-6 space-y-2">
-                    {topQuestions.map((question, index) => (
+                    {topQuestions.slice(0, 3).map((question, index) => (
                       <li key={index}>
                         <button
                           type="button"
@@ -639,7 +639,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
                   <div className="space-y-3">
                     <h3 className="font-semibold text-gray-900">Top Questions</h3>
                     <ul className="list-disc pl-6 space-y-2">
-                      {topQuestions.map((question, index) => (
+                      {topQuestions.slice(0, 3).map((question, index) => (
                         <li key={index}>
                           <button
                             type="button"
