@@ -40,3 +40,7 @@ env.example
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+#api-keys
+
+api_keys.txt

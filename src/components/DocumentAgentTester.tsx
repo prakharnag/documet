@@ -328,13 +328,8 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
     if (isOpen) {
       resetChat(); // Clear previous messages when opening
       
-      // Check for cached document data first
-      const cachedDocumentData = getCachedDocumentData(DocumentId);
-      if (cachedDocumentData) {
-        setFetchedDocumentData(cachedDocumentData);
-      } else if (!documentData) {
-        fetchDocumentData();
-      }
+      // Always fetch the latest document data from the API when opening
+      fetchDocumentData();
       
       fetchQuestions();
       if (showInitialSummary) {
@@ -357,7 +352,10 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
     }
   }, [isOpen, showInitialSummary, documentData]);
 
-  const currentDocumentData = documentData || fetchedDocumentData;
+  // Always prefer the latest documentData prop (from parent/dashboard) if present
+  const currentDocumentData = documentData && (documentData.s3Url || documentData.DocumentText)
+    ? documentData
+    : fetchedDocumentData;
 
   if (!isOpen) {
     return (
@@ -755,4 +753,4 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
     />
     </>
   );
-} 
+}
