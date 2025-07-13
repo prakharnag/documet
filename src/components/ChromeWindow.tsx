@@ -8,7 +8,7 @@ export default function ChromeWindow({ children }: { children: React.ReactNode }
         <span className="w-3 h-3 rounded-full bg-red-400" />
         <span className="w-3 h-3 rounded-full bg-yellow-400" />
         <span className="w-3 h-3 rounded-full bg-green-400" />
-        <span className="ml-4 text-gray-400 text-xs">documet.ai</span>
+        <span className="ml-4 text-gray-400 text-xs">documet</span>
       </div>
       <div className="bg-black flex items-center justify-center" style={{ aspectRatio: "16/9" }}>
         {children}
