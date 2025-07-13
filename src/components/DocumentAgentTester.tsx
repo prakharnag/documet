@@ -241,6 +241,13 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
       return;
     }
 
+    // Check cache first
+    const cachedQuestions = getCachedQuestions(DocumentId);
+    if (cachedQuestions && cachedQuestions.length > 0) {
+      setTopQuestions(cachedQuestions);
+      return;
+    }
+
     try {
       const response = await fetch('/api/Documents/questions', {
         method: 'POST',
@@ -257,6 +264,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
       const data = await response.json();
       if (data.questions && data.questions.length > 0) {
         setTopQuestions(data.questions);
+        setCachedQuestions(DocumentId, data.questions);
       }
     } catch (error) {
       console.error('Error fetching questions:', error);
@@ -335,17 +343,11 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
       if (showInitialSummary) {
         // Try to load from cache first
         const cachedSummary = getCachedSummary(DocumentId);
-        const cachedQuestions = getCachedQuestions(DocumentId);
-        
         if (cachedSummary) {
           setInitialSummary(cachedSummary);
         }
-        if (cachedQuestions) {
-          setTopQuestions(cachedQuestions);
-        }
-        
         // Only fetch from API if we don't have cached data
-        if (!cachedSummary || !cachedQuestions) {
+        if (!cachedSummary) {
           generateInitialSummary();
         }
       }
