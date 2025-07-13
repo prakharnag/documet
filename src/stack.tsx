@@ -11,7 +11,6 @@ export const stackServerApp = new StackServerApp({
     signUp: "/register", 
     afterSignUp: "/dashboard",
     afterSignOut: "/",
-    handler: "/handler",
   },
-  // Ensure proper domain configuration for cookie
+  // Remove custom handler - let Stack Auth handle OAuth callbacks
 });
