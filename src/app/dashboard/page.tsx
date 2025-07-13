@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState } from 'react';
+import { useUser } from "@stackframe/stack";
 import DocumentForm from '@/components/DocumentForm';
 import DocumentList from '@/components/DocumentList';
-import { Bot, Upload, MessageSquare, LogOut, User, Settings, ChevronDown } from 'lucide-react';
+import SettingsModal from '@/components/SettingsModal';
+import { LogOut, User, Settings, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useUser } from "@stackframe/stack";
 import Logo from '@/components/ui/logo';
 
 export default function DashboardPage() {
@@ -13,38 +14,62 @@ export default function DashboardPage() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
   const [documents, setDocuments] = useState<any[]>([]);
+  const [documentsLoading, setDocumentsLoading] = useState(true);
+  const [localDisplayName, setLocalDisplayName] = useState<string>('');
 
-  // Use displayName, fallback to 'User'
-  const userName = user.displayName || 'User';
+  // Use local display name if available, otherwise fallback to Stack's displayName or 'User'
+  const userName = localDisplayName || user.displayName || 'User';
+
+  // Load display name from localStorage on component mount
+  useEffect(() => {
+    if (user?.id) {
+      const savedDisplayName = localStorage.getItem(`displayName_${user.id}`);
+      if (savedDisplayName) {
+        setLocalDisplayName(savedDisplayName);
+      }
+    }
+  }, [user?.id]);
   
   const handleUploadSuccess = (newDocument: any) => {
     setDocuments(prev => [newDocument, ...prev]);
   };
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setMenuOpen(false);
+  const fetchDocuments = async () => {
+    setDocumentsLoading(true);
+    try {
+      const res = await fetch(`/api/Documents`);
+      const data = await res.json();
+      if (res.ok) {
+        setDocuments(data.Documents || []);
       }
+    } catch (error) {
+      console.error('Failed to fetch documents:', error);
+    } finally {
+      setDocumentsLoading(false);
     }
-    if (menuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    } else {
-      document.removeEventListener('mousedown', handleClickOutside);
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchDocuments();
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [menuOpen]);
+  }, [user]);
 
   if (!user) {
     return <div className="min-h-screen flex items-center justify-center text-gray-600 text-lg">Loading dashboard...</div>;
   }
 
-
-
   const handleLogout = () => {
     window.location.href = '/handler/sign-out';
+  };
+
+  const handleDisplayNameUpdate = (newDisplayName: string) => {
+    setLocalDisplayName(newDisplayName);
+    // Save to localStorage for persistence
+    if (user?.id) {
+      localStorage.setItem(`displayName_${user.id}`, newDisplayName);
+    }
   };
 
   return (
@@ -57,7 +82,7 @@ export default function DashboardPage() {
             <Logo size="lg" />
 
             {/* Profile Dropdown */}
-            <div className="relative" ref={menuRef}>
+            <div className="relative">
               <Button
                 variant="outline"
                 className="flex items-center gap-2 text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
@@ -94,25 +119,13 @@ export default function DashboardPage() {
 
       {/* Settings Modal */}
       {settingsOpen && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-8 border border-gray-200 relative">
-            <button
-              className="absolute top-3 right-3 text-gray-400 hover:text-gray-700"
-              onClick={() => setSettingsOpen(false)}
-            >
-              ×
-            </button>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Settings className="w-5 h-5" /> Settings
-            </h2>
-            <div className="space-y-8">
-              {/* Reset Password */}
-              {/* You may need to update these forms to use Neon Auth if you want passwordless or OAuth only */}
-              {/* <ResetPasswordForm userId={user.id} onClose={() => setSettingsOpen(false)} /> */}
-              {/* <DeleteAccountForm userId={user.id} onDelete={() => { setSettingsOpen(false); handleLogout(); }} /> */}
-            </div>
-          </div>
-        </div>
+        <SettingsModal
+          user={user}
+          isOpen={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          onLogout={handleLogout}
+          onDisplayNameUpdate={handleDisplayNameUpdate}
+        />
       )}
 
       {/* Main Content */}
@@ -123,7 +136,7 @@ export default function DashboardPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 md:p-10 w-full">
             <DocumentForm
               onUploadSuccess={handleUploadSuccess}
-              // User context is handled via Neon Auth session
+              documentCount={documents.length}
             />
           </div>
           {/* Steps/Features List */}
@@ -159,7 +172,7 @@ export default function DashboardPage() {
           <DocumentList 
             documents={documents}
             setDocuments={setDocuments}
-            /* User context is handled via Neon Auth session */ 
+            loading={documentsLoading}
           />
         </div>
       </div>

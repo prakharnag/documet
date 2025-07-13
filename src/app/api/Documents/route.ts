@@ -5,7 +5,7 @@ import { Documents } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import AWS from 'aws-sdk';
 import { EmbeddingService } from '@/lib/embeddings';
-import { getSignedDownloadUrl } from '@/lib/s3';
+import { getSignedDownloadUrl, extractS3Key } from '@/lib/s3';
 
 export async function GET(req: NextRequest) {
   try {
@@ -31,11 +31,8 @@ export async function GET(req: NextRequest) {
       userDocuments.map(async (doc) => {
         if (doc.s3Url) {
           try {
-            // Handle both full URLs and S3 keys
-            let s3Key = doc.s3Url;
-            if (doc.s3Url.includes('.amazonaws.com/')) {
-              s3Key = doc.s3Url.split('.amazonaws.com/')[1];
-            }
+            // Extract S3 key using helper function
+            const s3Key = extractS3Key(doc.s3Url);
             
             console.log('Processing S3 URL:', doc.s3Url, 'Using key:', s3Key);
             
@@ -112,13 +109,20 @@ export async function DELETE(req: NextRequest) {
           region: process.env.AWS_REGION,
         });
         
-        // Extract S3 key from URL
-        const s3Key = document[0].s3Url.split('.amazonaws.com/')[1];
+        // Extract S3 key using helper function
+        const s3Key = extractS3Key(document[0].s3Url);
         
-        await s3.deleteObject({
-          Bucket: process.env.AWS_S3_BUCKET_NAME!,
-          Key: s3Key,
-        }).promise();
+        // Only attempt deletion if we have a valid S3 key
+        if (s3Key && s3Key.trim()) {
+          console.log('Deleting S3 object with key:', s3Key);
+          await s3.deleteObject({
+            Bucket: process.env.AWS_S3_BUCKET_NAME!,
+            Key: s3Key.trim(),
+          }).promise();
+          console.log('Successfully deleted S3 object');
+        } else {
+          console.warn('Invalid S3 key, skipping S3 deletion:', document[0].s3Url);
+        }
       } catch (s3Error) {
         console.error('S3 deletion error:', s3Error);
         // Continue with database deletion even if S3 fails

@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface DocumentPreviewProps {
   documentId: string;
   fileName?: string | null;
-  s3Url?: string | null; // Add optional s3Url prop
+  s3Url?: string | null;
 }
 
 export default function DocumentPreview({ documentId, fileName, s3Url }: DocumentPreviewProps) {
@@ -14,60 +14,91 @@ export default function DocumentPreview({ documentId, fileName, s3Url }: Documen
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchPreviewUrl = async () => {
-      try {
-        console.log('Fetching preview URL for document:', documentId);
-        const response = await fetch(`/api/Documents/download/${documentId}`);
-        const data = await response.json();
-        console.log('Preview response:', data);
-        
-        if (response.ok) {
-          setPreviewUrl(data.downloadUrl);
-          console.log('Preview URL set:', data.downloadUrl);
-        } else {
-          console.error('Preview error:', data.error);
-          setError(data.error || 'Failed to load preview');
-        }
-      } catch (err) {
-        console.error('Preview fetch error:', err);
-        setError('Failed to load preview');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    // If s3Url is provided, use it directly (no API call needed)
     if (s3Url) {
       setPreviewUrl(s3Url);
       setLoading(false);
-      console.log('Using cached S3 URL for preview:', s3Url);
     } else {
-      // Only make API call if s3Url is not provided
       fetchPreviewUrl();
     }
   }, [documentId, s3Url]);
 
+  const fetchPreviewUrl = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(`/api/Documents/preview/${documentId}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.previewUrl) {
+        setPreviewUrl(data.previewUrl);
+      } else {
+        throw new Error(data.error || 'No preview URL received');
+      }
+    } catch (err) {
+      console.error('Preview fetch error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load preview';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-200px)]">
-        <div className="text-gray-500">Loading preview...</div>
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="text-gray-500 text-sm">Loading preview...</div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-200px)]">
-        <div className="text-red-500">{error}</div>
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] gap-4">
+        <div className="text-red-500 text-center">
+          <div className="text-lg font-medium mb-2">Preview Unavailable</div>
+          <div className="text-sm">{error}</div>
+        </div>
+        {fileName && (
+          <div className="text-gray-600 text-sm">
+            Document: {fileName}
+          </div>
+        )}
       </div>
     );
   }
 
+  if (previewUrl) {
+    return (
+      <iframe
+        src={previewUrl}
+        className="w-full h-[calc(100vh-200px)] border-0"
+        title={fileName || 'Document Preview'}
+      />
+    );
+  }
+
   return (
-    <iframe
-      src={previewUrl || ''}
-      className="w-full h-[calc(100vh-200px)] border-0"
-      title={fileName || 'Document Preview'}
-    />
+    <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] gap-4">
+      <div className="text-gray-700 text-center">
+        <div className="text-lg font-medium mb-2">Preview Not Available</div>
+        <div className="text-sm">
+          Please download to view the document.
+        </div>
+      </div>
+      {fileName && (
+        <div className="text-gray-600 text-sm">
+          Document: {fileName}
+        </div>
+      )}
+    </div>
   );
 }

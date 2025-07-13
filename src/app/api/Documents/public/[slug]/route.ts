@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { Documents } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { getSignedDownloadUrl } from '@/lib/s3';
+import { getSignedDownloadUrl, extractS3Key } from '@/lib/s3';
 
 export async function GET(
   req: NextRequest,
@@ -39,8 +39,10 @@ export async function GET(
     let signedUrl = s3Url;
     if (s3Url) {
       try {
-        const s3Key = s3Url.split('.amazonaws.com/')[1];
-        signedUrl = await getSignedDownloadUrl(s3Key);
+        const s3Key = extractS3Key(s3Url);
+        if (s3Key && s3Key.trim()) {
+          signedUrl = await getSignedDownloadUrl(s3Key);
+        }
       } catch (error) {
         console.error('Failed to generate signed URL:', error);
       }

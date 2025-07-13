@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser } from '@stackframe/stack';
 import { Button } from '@/components/ui/button';
-import { Bot, Send, Share, Mic, MicOff, Volume2, Sparkles, Download, FileText } from 'lucide-react';
+import { Bot, Send, Share, Mic, MicOff, Volume2, Sparkles, Download } from 'lucide-react';
 import DocumentPreview from './DocumentPreview';
 import ShareModal from './ShareModal';
 import VoiceChat from './VoiceChat';
@@ -110,8 +110,6 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
   const [inputQuestion, setInputQuestion] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(defaultOpen);
-  const [sampleQuestions, setSampleQuestions] = useState<string[]>(defaultQuestions);
-  const [questionsLoading, setQuestionsLoading] = useState(false);
   const [initialSummary, setInitialSummary] = useState<string>('');
   const [topQuestions, setTopQuestions] = useState<string[]>([]);
   const [summaryLoading, setSummaryLoading] = useState(false);
@@ -119,7 +117,6 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [voiceAgentActive, setVoiceAgentActive] = useState(false);
 
   const resetChat = () => {
     setMessages([]);
@@ -156,20 +153,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
     recognition.start();
   };
 
-  const speakResponse = (text: string) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.9;
-      utterance.pitch = 1;
-      utterance.volume = 1;
-      
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      
-      window.speechSynthesis.speak(utterance);
-    }
-  };
+
 
   const stopSpeaking = () => {
     if ('speechSynthesis' in window) {
@@ -190,6 +174,12 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
 
   const askQuestion = async (question: string) => {
     if (!question.trim()) return;
+    
+    // Validate DocumentId before making the request
+    if (!DocumentId || DocumentId.trim() === '') {
+      addMessage('ai', 'Error: Document ID is missing. Please try again.');
+      return;
+    }
 
     setIsLoading(true);
     addMessage('user', question);
@@ -198,7 +188,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
       const response = await fetch('/api/Documents/qa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ DocumentId, question })
+        body: JSON.stringify({ DocumentId: DocumentId.trim(), question })
       });
 
       const data = await response.json();
@@ -245,23 +235,32 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
   };
 
   const fetchQuestions = async () => {
-    setQuestionsLoading(true);
+    // Validate DocumentId before making the request
+    if (!DocumentId || DocumentId.trim() === '') {
+      console.warn('DocumentId is empty, skipping questions fetch');
+      return;
+    }
+
     try {
       const response = await fetch('/api/Documents/questions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ DocumentId })
+        body: JSON.stringify({ DocumentId: DocumentId.trim() })
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Questions API error:', errorData.error);
+        return;
+      }
       
       const data = await response.json();
       if (data.questions && data.questions.length > 0) {
-        setSampleQuestions(data.questions);
+        setTopQuestions(data.questions);
       }
     } catch (error) {
       console.error('Error fetching questions:', error);
       // Keep default questions if AI generation fails
-    } finally {
-      setQuestionsLoading(false);
     }
   };
 
@@ -289,12 +288,19 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
   };
 
   const generateInitialSummary = async () => {
+    // Validate DocumentId before making the request
+    if (!DocumentId || DocumentId.trim() === '') {
+      console.warn('DocumentId is empty, skipping summary generation');
+      setSummaryLoading(false);
+      return;
+    }
+
     setSummaryLoading(true);
     try {
       const response = await fetch('/api/Documents/summary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ DocumentId })
+        body: JSON.stringify({ DocumentId: DocumentId.trim() })
       });
       
       const data = await response.json();
@@ -375,10 +381,6 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-100">
           <div className="flex items-center gap-3">
             <Logo size="sm" />
-            <div>
-              <h3 className="font-semibold text-gray-900">AI Document Assistant</h3>
-              <p className="text-sm text-gray-500">{DocumentTitle}</p>
-            </div>
           </div>
           <div className="flex gap-2">
             <Button
@@ -584,9 +586,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
           <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-100">
             <div className="flex items-center gap-3">
               <Logo size="sm" />
-              <div>
-                <p className="text-sm text-gray-500">{DocumentTitle}</p>
-              </div>
+              
             </div>
             <div className="flex gap-2">
               <Button

@@ -30,6 +30,21 @@ export const getS3Url = (key: string): string => {
   return `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${key}`;
 };
 
+export const extractS3Key = (s3Url: string): string => {
+  if (!s3Url || !s3Url.trim()) {
+    return '';
+  }
+  
+  // Handle full S3 URLs
+  if (s3Url.includes('.amazonaws.com/')) {
+    return s3Url.split('.amazonaws.com/')[1];
+  }
+  
+  // If it doesn't contain amazonaws.com, assume it's already a key
+  // This handles the case where we store S3 keys directly in the database
+  return s3Url;
+};
+
 export const getPublicS3Url = (key: string): string => {
   // Generate a public URL (no authentication required)
   // Note: This only works if the bucket/object is publicly readable
@@ -57,6 +72,37 @@ export const getSignedDownloadUrl = async (key: string): Promise<string> => {
     return signedUrl;
   } catch (error) {
     console.error('❌ Signed URL generation failed:', error);
+    // Fallback to public URL only if key is valid
+    if (key && key.trim()) {
+      return getPublicS3Url(key.trim());
+    }
+    throw error;
+  }
+};
+
+export const getSignedPreviewUrl = async (key: string, contentType?: string): Promise<string> => {
+  // Validate key before processing
+  if (!key || key.trim() === '') {
+    console.error('❌ Empty S3 key provided for preview');
+    throw new Error('S3 key cannot be empty');
+  }
+
+  try {
+    // Generate signed URL for preview (inline display)
+    const command = new GetObjectCommand({
+      Bucket: process.env.AWS_S3_BUCKET_NAME!,
+      Key: key.trim(),
+      ResponseContentType: contentType, // Set content type for proper display
+      ResponseContentDisposition: 'inline', // Display inline instead of download
+    });
+
+    const signedUrl = await getSignedUrl(s3Client, command, { 
+      expiresIn: 3600 // 1 hour
+    });
+    
+    return signedUrl;
+  } catch (error) {
+    console.error('❌ Signed preview URL generation failed:', error);
     // Fallback to public URL only if key is valid
     if (key && key.trim()) {
       return getPublicS3Url(key.trim());

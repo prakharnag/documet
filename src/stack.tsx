@@ -13,4 +13,5 @@ export const stackServerApp = new StackServerApp({
     afterSignOut: "/",
     handler: "/handler",
   },
+  // Ensure proper domain configuration for cookie
 });

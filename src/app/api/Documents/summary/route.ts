@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
 
     // Try to get authenticated user (optional for public access)
     const user = await stackServerApp.getUser();
-    let isAuthenticated = !!user;
+    const isAuthenticated = !!user;
 
     // Fetch the document content and check access
     const doc = await db

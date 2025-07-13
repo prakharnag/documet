@@ -7,7 +7,7 @@ import { promisify } from 'util';
 import { Readable } from 'stream';
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { db } from '@/db';
-import { Documents, DocumentSections, DocumentSubsections } from '@/db/schema';
+import { Documents } from '@/db/schema';
 import { v4 as uuidv4 } from 'uuid';
 import { uploadToS3 } from '@/lib/s3';
 import { stackServerApp } from '@/stack';

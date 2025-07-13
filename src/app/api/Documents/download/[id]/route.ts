@@ -3,7 +3,7 @@ import { db } from '@/db';
 import { Documents } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { stackServerApp } from '@/stack';
-import { getSignedDownloadUrl } from '@/lib/s3';
+import { getSignedDownloadUrl, extractS3Key } from '@/lib/s3';
 
 export async function GET(
   req: NextRequest,
@@ -18,7 +18,7 @@ export async function GET(
 
     // Try to get authenticated user (optional for public access)
     const user = await stackServerApp.getUser();
-    let isAuthenticated = !!user;
+    const isAuthenticated = !!user;
 
     // Fetch the document and check access
     const doc = await db
@@ -50,7 +50,7 @@ export async function GET(
 
     try {
       // Extract S3 key from URL
-      const s3Key = s3Url.split('.amazonaws.com/')[1];
+      const s3Key = extractS3Key(s3Url);
       
       // Generate a signed URL for the S3 object
       const downloadUrl = await getSignedDownloadUrl(s3Key);

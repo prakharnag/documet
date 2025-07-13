@@ -7,15 +7,28 @@ import { stackServerApp } from '@/stack';
 
 export async function POST(req: NextRequest) {
   try {
-    const { DocumentId } = await req.json();
+    // Check if request has a body
+    const contentType = req.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      return NextResponse.json({ error: 'Content-Type must be application/json' }, { status: 400 });
+    }
+
+    let body;
+    try {
+      body = await req.json();
+    } catch (parseError) {
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+    }
+
+    const { DocumentId } = body;
     
-    if (!DocumentId) {
-      return NextResponse.json({ error: 'DocumentId is required.' }, { status: 400 });
+    if (!DocumentId || typeof DocumentId !== 'string' || DocumentId.trim() === '') {
+      return NextResponse.json({ error: 'DocumentId is required and must be a non-empty string.' }, { status: 400 });
     }
 
     // Try to get authenticated user (optional for public access)
     const user = await stackServerApp.getUser();
-    let isAuthenticated = !!user;
+    const isAuthenticated = !!user;
 
     // Fetch the document content and check access
     const doc = await db
