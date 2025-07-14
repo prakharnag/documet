@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "npm run drizzle:migrate",
     "start": "next start",
     "lint": "next lint",
     "drizzle:generate": "drizzle-kit generate --config=drizzle.config.ts",
