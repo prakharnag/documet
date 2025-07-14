@@ -5,71 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1751500020675,
-      "tag": "0000_common_kitty_pryde",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1751514193857,
-      "tag": "0001_dry_silver_fox",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1751515955455,
-      "tag": "0002_cloudy_kate_bishop",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1751516107391,
-      "tag": "0003_wonderful_tag",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1751517778934,
-      "tag": "0004_brainy_celestials",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1751562369345,
-      "tag": "0005_nebulous_hardball",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1751662324681,
-      "tag": "0006_clear_krista_starr",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1751687476071,
-      "tag": "0007_high_black_tom",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1751942863505,
-      "tag": "0008_far_toad_men",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1752005942006,
-      "tag": "0009_many_sage",
+      "when": 1752463853691,
+      "tag": "0000_brief_zodiak",
       "breakpoints": true
     }
   ]
