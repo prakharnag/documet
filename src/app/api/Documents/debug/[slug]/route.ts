@@ -8,6 +8,10 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    if (!process.env.DATABASE_URL) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+    }
+
     const { slug } = await params;
 
     const doc = await db
