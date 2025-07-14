@@ -16,9 +16,15 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Documet",
-  description: "Turn any document into a voice-enabled, shareable AI assistant.",
+  description: "Turn your document into a voice-enabled, shareable AI assistant.",
   icons: {
     icon: "/documet.ico",
+  },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
   },
 };
 
@@ -31,9 +37,10 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="icon" href="/documet-new.png" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#181a20] text-[#e5e7eb]`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#181a20] text-[#e5e7eb] overflow-x-hidden`}
       >
         <StackProvider app={stackServerApp}>
           <StackTheme>
