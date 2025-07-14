@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { uploadToS3 } from '@/lib/s3';
 import { stackServerApp } from '@/stack';
 import { EmbeddingService } from '@/lib/embeddings';
+import { chunkText } from '@/lib/chunking';
 
 export const config = {
   api: {
@@ -20,58 +21,6 @@ export const config = {
 };
 
 const readFile = promisify(fs.readFile);
-
-function createChunks(text: string, maxChunkSize: number = 1500, overlap: number = 200) {
-  // Clean the text but preserve all content
-  const cleanText = text
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-  
-  if (cleanText.length <= maxChunkSize) {
-    return [cleanText];
-  }
-  
-  const chunks: string[] = [];
-  let start = 0;
-  
-  while (start < cleanText.length) {
-    let end = start + maxChunkSize;
-    
-    // If we're not at the end of the text, try to break at a sentence or paragraph
-    if (end < cleanText.length) {
-      // Look for paragraph break first
-      const paragraphBreak = cleanText.lastIndexOf('\n\n', end);
-      if (paragraphBreak > start + maxChunkSize * 0.5) {
-        end = paragraphBreak + 2;
-      } else {
-        // Look for sentence break
-        const sentenceBreak = cleanText.lastIndexOf('. ', end);
-        if (sentenceBreak > start + maxChunkSize * 0.5) {
-          end = sentenceBreak + 2;
-        } else {
-          // Look for any whitespace
-          const spaceBreak = cleanText.lastIndexOf(' ', end);
-          if (spaceBreak > start + maxChunkSize * 0.5) {
-            end = spaceBreak + 1;
-          }
-        }
-      }
-    }
-    
-    const chunk = cleanText.slice(start, end).trim();
-    if (chunk.length > 0) {
-      chunks.push(chunk);
-    }
-    
-    // Move start position with overlap
-    start = end - overlap;
-    if (start >= cleanText.length) break;
-  }
-  
-  return chunks.filter(chunk => chunk.length > 50); // Only filter very short chunks
-}
 
 function nodeRequestFromNextRequest(req: NextRequest) {
   return (async () => {
@@ -149,7 +98,7 @@ export async function POST(req: NextRequest) {
     console.log(`Original text length: ${text.length} characters`);
     
     // Create chunks with overlap for better context preservation
-    const chunks = createChunks(text, 1500, 200);
+    const chunks = chunkText(text, 1000, 200);
     console.log(`Created ${chunks.length} chunks for embedding`);
     
     // Log chunk sizes for debugging
@@ -194,4 +143,4 @@ export async function POST(req: NextRequest) {
     console.error('Upload error:', error);
     return NextResponse.json({ error: 'Failed to process Document.' }, { status: 500 });
   }
-} 
+}

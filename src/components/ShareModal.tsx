@@ -74,23 +74,23 @@ export default function ShareModal({ DocumentId, DocumentTitle, isOpen, onClose 
 
   return (
     <div className="fixed inset-0 bg-opacity-30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[100vh] overflow-y-auto border border-gray-200">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[100vh] overflow-y-auto border border-orange-200">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-orange-200">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-r from-orange-600 to-amber-600 rounded-lg flex items-center justify-center">
               <Share2 className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">Share Your AI Document</h3>
-              <p className="text-sm text-gray-500">{DocumentTitle}</p>
+              <h3 className="font-semibold text-stone-800">Share Your AI Document</h3>
+              <p className="text-sm text-stone-500">{DocumentTitle}</p>
             </div>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+            className="text-stone-500 hover:text-stone-700 hover:bg-orange-100"
           >
             ✕
           </Button>
@@ -98,16 +98,16 @@ export default function ShareModal({ DocumentId, DocumentTitle, isOpen, onClose 
 
         <div className="p-6 space-y-6">
           {/* Public Access Warning */}
-          <div className="mb-4 p-4 bg-yellow-100 border-l-4 border-yellow-400 text-yellow-800 rounded-lg">
+          <div className="mb-4 p-4 bg-amber-100 border-l-4 border-amber-400 text-amber-800 rounded-lg">
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0">
-                <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
               </div>
               <div>
-                <h4 className="font-medium text-yellow-900 mb-1">Public Access Warning</h4>
-                <p className="text-sm text-yellow-800">
+                <h4 className="font-medium text-amber-900 mb-1">Public Access Warning</h4>
+                <p className="text-sm text-amber-800">
                   This link will be publicly accessible. Anyone with the link can access the AI assistant for this document. Please share responsibly and only with intended recipients.
                 </p>
               </div>
@@ -118,10 +118,10 @@ export default function ShareModal({ DocumentId, DocumentTitle, isOpen, onClose 
             /* Generate Link Section */
             <div className="space-y-4">
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">
+                <h4 className="font-medium text-stone-800 mb-2">
                   Personalize Your Message (Optional)
                 </h4>
-                <p className="text-sm text-gray-600 mb-3">
+                <p className="text-sm text-stone-600 mb-3">
                   Add a custom message that will be included with your shareable link. 
                   If left empty, we'll use a default friendly message.
                 </p>
@@ -129,11 +129,11 @@ export default function ShareModal({ DocumentId, DocumentTitle, isOpen, onClose 
                   value={customMessage}
                   onChange={(e) => setCustomMessage(e.target.value)}
                   placeholder="Hi! I'd love to share my AI-powered Document with you. You can ask me any questions from the document, and I'll respond just like we're having a real conversation. Feel free to explore!"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 resize-none"
+                  className="w-full p-3 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white text-stone-900 resize-none"
                   rows={4}
                   maxLength={500}
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-stone-500 mt-1">
                   {customMessage.length}/500 characters
                 </p>
               </div>
@@ -160,21 +160,21 @@ export default function ShareModal({ DocumentId, DocumentTitle, isOpen, onClose 
           ) : (
             /* Share Results Section */
             <div className="space-y-6">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <Check className="w-5 h-5 text-green-600" />
-                  <h4 className="font-medium text-green-900">
+                  <Check className="w-5 h-5 text-orange-600" />
+                  <h4 className="font-medium text-orange-900">
                     Shareable Link Generated!
                   </h4>
                 </div>
-                <p className="text-sm text-green-700">
+                <p className="text-sm text-orange-700">
                   Your AI Document assistant is now ready to share with Anyone.
                 </p>
               </div>
 
               {/* Shareable Link */}
               <div>
-                <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                <h4 className="font-medium text-stone-800 mb-2 flex items-center gap-2">
                   <Link className="w-4 h-4" />
                   Shareable Link
                 </h4>
@@ -183,13 +183,13 @@ export default function ShareModal({ DocumentId, DocumentTitle, isOpen, onClose 
                     type="text"
                     value={shareData.shareableLink}
                     readOnly
-                    className="flex-1 p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 text-sm"
+                    className="flex-1 p-3 border border-orange-300 rounded-lg bg-orange-50 text-stone-900 text-sm"
                   />
                   <Button
                     onClick={() => copyToClipboard(shareData.shareableLink, 'link')}
                     variant="outline"
                     size="sm"
-                    className="flex items-center gap-2 border-gray-300 hover:bg-gray-50"
+                    className="flex items-center gap-2 border-orange-300 hover:bg-orange-50"
                   >
                     {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     {copied ? 'Copied!' : 'Copy'}
@@ -199,19 +199,19 @@ export default function ShareModal({ DocumentId, DocumentTitle, isOpen, onClose 
 
               {/* Personalized Message */}
               <div>
-                <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                <h4 className="font-medium text-stone-800 mb-2 flex items-center gap-2">
                   <MessageSquare className="w-4 h-4" />
                   Personalized Message
                 </h4>
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <p className="text-sm text-gray-700 mb-3">
+                <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                  <p className="text-sm text-stone-700 mb-3">
                     {shareData.personalizedMessage}
                   </p>
                   <Button
                     onClick={copyFullMessage}
                     variant="outline"
                     size="sm"
-                    className="flex items-center gap-2 border-gray-300 hover:bg-gray-50"
+                    className="flex items-center gap-2 border-orange-300 hover:bg-orange-50"
                   >
                     {messageCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     {messageCopied ? 'Copied!' : 'Copy Message'}
@@ -220,11 +220,11 @@ export default function ShareModal({ DocumentId, DocumentTitle, isOpen, onClose 
               </div>
 
               {/* Instructions */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-medium text-blue-900 mb-2">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <h4 className="font-medium text-orange-900 mb-2">
                   How to Share
                 </h4>
-                <ul className="text-sm text-blue-700 space-y-1">
+                <ul className="text-sm text-orange-700 space-y-1">
                   <li>• Copy the link and send it directly to Anyone</li>
                   <li>• Or copy the full message + link for a complete introduction</li>
                   <li>• Anyone can ask questions and download your Document</li>
@@ -239,7 +239,7 @@ export default function ShareModal({ DocumentId, DocumentTitle, isOpen, onClose 
                     setCustomMessage('');
                   }}
                   variant="outline"
-                  className="flex-1 border-gray-300 hover:bg-gray-50"
+                  className="flex-1 border-orange-300 hover:bg-orange-50"
                 >
                   Generate Another Link
                 </Button>

@@ -12,7 +12,7 @@ const GetStarted = () => {
 
   return (
     <Button variant="hero" size="lg" onClick={handleGetStarted}>
-      Get Started
+      Sign In
     </Button>
   );
 };

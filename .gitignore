@@ -41,5 +41,6 @@ env.example
 *.tsbuildinfo
 next-env.d.ts
 
-# keys
+#api-keys
+
 api_keys.txt

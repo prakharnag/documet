@@ -53,8 +53,8 @@ export default function DocumentPreview({ documentId, fileName, s3Url }: Documen
     return (
       <div className="flex items-center justify-center h-[calc(100vh-200px)]">
         <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <div className="text-gray-500 text-sm">Loading preview...</div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+          <div className="text-stone-500 text-sm">Loading preview...</div>
         </div>
       </div>
     );
@@ -68,7 +68,7 @@ export default function DocumentPreview({ documentId, fileName, s3Url }: Documen
           <div className="text-sm">{error}</div>
         </div>
         {fileName && (
-          <div className="text-gray-600 text-sm">
+          <div className="text-stone-600 text-sm">
             Document: {fileName}
           </div>
         )}
@@ -88,14 +88,14 @@ export default function DocumentPreview({ documentId, fileName, s3Url }: Documen
 
   return (
     <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] gap-4">
-      <div className="text-gray-700 text-center">
+      <div className="text-stone-700 text-center">
         <div className="text-lg font-medium mb-2">Preview Not Available</div>
         <div className="text-sm">
           Please download to view the document.
         </div>
       </div>
       {fileName && (
-        <div className="text-gray-600 text-sm">
+        <div className="text-stone-600 text-sm">
           Document: {fileName}
         </div>
       )}

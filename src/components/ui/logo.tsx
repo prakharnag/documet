@@ -46,7 +46,7 @@ export default function Logo({
   if (iconOnly) {
     return (
       <Image
-        src="/documet.png"
+        src="/documet-new.png"
         alt="Documet logo"
         width={width}
         height={height}
@@ -59,7 +59,7 @@ export default function Logo({
     <div className={cn("flex items-center gap-3", containerClassName)}>
       <div className={cn("flex-shrink-0", className)}>
         <Image
-          src="/documet.png"
+          src="/documet-new.png"
           alt="Documet logo"
           width={width}
           height={height}
@@ -72,7 +72,7 @@ export default function Logo({
             Documet
           </span>
           <span className={cn("font-medium text-gray-500", subtitleSize)}>
-          Make any document a shareable, conversational AI assistant          </span>
+          Turn any document into a voice-enabled, shareable AI assistant.          </span>
         </div>
       )}
     </div>

@@ -20,18 +20,18 @@ export default async function DocumentPage({ params }: { params: Promise<{ slug:
   const document = doc[0];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-orange-50">
       <div className="flex h-screen">
         {/* Left Side - Document Preview */}
-        <div className="w-1/2 bg-white border-r border-gray-200 overflow-y-auto">
+        <div className="w-1/2 bg-orange-50/20 border-r border-orange-200 overflow-y-auto">
           <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">{document.fileName || 'Document'}</h1>
-            <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+            <h1 className="text-2xl font-bold text-stone-800 mb-4">{document.fileName || 'Document'}</h1>
+            <div className="bg-white rounded-lg border border-orange-200 overflow-hidden">
               {document.s3Url ? (
                 <DocumentPreview documentId={document.id} fileName={document.fileName} />
               ) : (
                 <div className="p-4">
-                  <pre className="whitespace-pre-wrap text-sm text-gray-700 font-mono leading-relaxed">
+                  <pre className="whitespace-pre-wrap text-sm text-stone-700 font-mono leading-relaxed">
                     {document.DocumentText}
                   </pre>
                 </div>
@@ -41,7 +41,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ slug:
         </div>
 
         {/* Right Side - Chatbot */}
-        <div className="w-1/2 bg-white">
+        <div className="w-1/2 bg-orange-50/20">
           <DocumentAgentTester 
             DocumentId={document.id} 
             DocumentTitle={document.fileName || 'Document'} 

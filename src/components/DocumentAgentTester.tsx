@@ -44,11 +44,11 @@ const defaultQuestions = [
   "Are there any important warnings or notes?"
 ];
 
-// Helper functions for localStorage caching
+// Helper functions for sessionStorage caching
 const getCachedSummary = (docId: string): string | null => {
   if (typeof window === 'undefined') return null;
   try {
-    return localStorage.getItem(`summary_${docId}`);
+    return sessionStorage.getItem(`summary_${docId}`);
   } catch (error) {
     console.error('Error reading cached summary:', error);
     return null;
@@ -58,7 +58,7 @@ const getCachedSummary = (docId: string): string | null => {
 const getCachedQuestions = (docId: string): string[] | null => {
   if (typeof window === 'undefined') return null;
   try {
-    const cached = localStorage.getItem(`topQuestions_${docId}`);
+    const cached = sessionStorage.getItem(`topQuestions_${docId}`);
     return cached ? JSON.parse(cached) : null;
   } catch (error) {
     console.error('Error reading cached questions:', error);
@@ -69,7 +69,7 @@ const getCachedQuestions = (docId: string): string[] | null => {
 const getCachedDocumentData = (docId: string): {s3Url?: string; DocumentText?: string} | null => {
   if (typeof window === 'undefined') return null;
   try {
-    const cached = localStorage.getItem(`documentData_${docId}`);
+    const cached = sessionStorage.getItem(`documentData_${docId}`);
     return cached ? JSON.parse(cached) : null;
   } catch (error) {
     console.error('Error reading cached document data:', error);
@@ -80,7 +80,7 @@ const getCachedDocumentData = (docId: string): {s3Url?: string; DocumentText?: s
 const setCachedSummary = (docId: string, summary: string): void => {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(`summary_${docId}`, summary);
+    sessionStorage.setItem(`summary_${docId}`, summary);
   } catch (error) {
     console.error('Error caching summary:', error);
   }
@@ -89,7 +89,7 @@ const setCachedSummary = (docId: string, summary: string): void => {
 const setCachedQuestions = (docId: string, questions: string[]): void => {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(`topQuestions_${docId}`, JSON.stringify(questions));
+    sessionStorage.setItem(`topQuestions_${docId}`, JSON.stringify(questions));
   } catch (error) {
     console.error('Error caching questions:', error);
   }
@@ -98,7 +98,7 @@ const setCachedQuestions = (docId: string, questions: string[]): void => {
 const setCachedDocumentData = (docId: string, data: {s3Url?: string; DocumentText?: string}): void => {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(`documentData_${docId}`, JSON.stringify(data));
+    sessionStorage.setItem(`documentData_${docId}`, JSON.stringify(data));
   } catch (error) {
     console.error('Error caching document data:', error);
   }
@@ -241,6 +241,13 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
       return;
     }
 
+    // Check cache first
+    const cachedQuestions = getCachedQuestions(DocumentId);
+    if (cachedQuestions && cachedQuestions.length > 0) {
+      setTopQuestions(cachedQuestions);
+      return;
+    }
+
     try {
       const response = await fetch('/api/Documents/questions', {
         method: 'POST',
@@ -257,6 +264,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
       const data = await response.json();
       if (data.questions && data.questions.length > 0) {
         setTopQuestions(data.questions);
+        setCachedQuestions(DocumentId, data.questions);
       }
     } catch (error) {
       console.error('Error fetching questions:', error);
@@ -328,36 +336,28 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
     if (isOpen) {
       resetChat(); // Clear previous messages when opening
       
-      // Check for cached document data first
-      const cachedDocumentData = getCachedDocumentData(DocumentId);
-      if (cachedDocumentData) {
-        setFetchedDocumentData(cachedDocumentData);
-      } else if (!documentData) {
-        fetchDocumentData();
-      }
+      // Always fetch the latest document data from the API when opening
+      fetchDocumentData();
       
       fetchQuestions();
       if (showInitialSummary) {
         // Try to load from cache first
         const cachedSummary = getCachedSummary(DocumentId);
-        const cachedQuestions = getCachedQuestions(DocumentId);
-        
         if (cachedSummary) {
           setInitialSummary(cachedSummary);
         }
-        if (cachedQuestions) {
-          setTopQuestions(cachedQuestions);
-        }
-        
         // Only fetch from API if we don't have cached data
-        if (!cachedSummary || !cachedQuestions) {
+        if (!cachedSummary) {
           generateInitialSummary();
         }
       }
     }
   }, [isOpen, showInitialSummary, documentData]);
 
-  const currentDocumentData = documentData || fetchedDocumentData;
+  // Always prefer the latest documentData prop (from parent/dashboard) if present
+  const currentDocumentData = documentData && (documentData.s3Url || documentData.DocumentText)
+    ? documentData
+    : fetchedDocumentData;
 
   if (!isOpen) {
     return (
@@ -376,9 +376,9 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
   // If showInitialSummary is true, use a non-modal layout (for public pages)
   if (showInitialSummary && defaultOpen) {
     return (
-      <div className="h-full flex flex-col">
+      <div className="h-full flex flex-col bg-orange-50/20">
         {/* Header */}
-        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-100">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50">
           <div className="flex items-center gap-3">
             <Logo size="sm" />
           </div>
@@ -417,30 +417,30 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
         <div className="flex-1 p-6 overflow-y-auto">
           {summaryLoading ? (
             <div className="space-y-4">
-              <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-              <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
-              <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
+              <div className="h-4 bg-orange-200 rounded animate-pulse"></div>
+              <div className="h-4 bg-orange-200 rounded animate-pulse w-3/4"></div>
+              <div className="h-4 bg-orange-200 rounded animate-pulse w-1/2"></div>
             </div>
           ) : initialSummary ? (
             <div className="space-y-6">
               {/* Document Summary */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold text-blue-900 mb-2">Document Summary</h3>
-                <p className="text-blue-800 text-sm leading-relaxed">{initialSummary}</p>
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <h3 className="font-semibold text-orange-900 mb-2">Document Summary</h3>
+                <p className="text-orange-800 text-sm leading-relaxed">{initialSummary}</p>
               </div>
 
               {/* Top 3 Questions */}
               {topQuestions.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="font-semibold text-gray-900">Top Questions</h3>
+                  <h3 className="font-semibold text-stone-800">Top Questions</h3>
                   <ul className="list-disc pl-6 space-y-2">
-                    {topQuestions.map((question, index) => (
+                    {topQuestions.slice(0, 3).map((question, index) => (
                       <li key={index}>
                         <button
                           type="button"
                           onClick={() => handleSampleQuestion(question)}
                           disabled={isLoading}
-                          className="text-blue-700 underline hover:text-blue-900 focus:outline-none focus:underline bg-transparent p-0 border-0 text-left cursor-pointer disabled:text-gray-400"
+                          className="text-orange-700 underline hover:text-orange-900 focus:outline-none focus:underline bg-transparent p-0 border-0 text-left cursor-pointer disabled:text-stone-400"
                         >
                           {question}
                         </button>
@@ -453,7 +453,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
               {/* Chat Messages */}
               {messages.length > 0 && (
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-gray-900">Conversation</h3>
+                  <h3 className="font-semibold text-stone-800">Conversation</h3>
                   {messages.map((message) => (
                     <div
                       key={message.id}
@@ -462,8 +462,8 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
                       <div
                         className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg text-sm ${
                           message.type === 'user'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-900'
+                            ? 'bg-orange-600 text-white'
+                            : 'bg-orange-50 text-stone-800'
                         }`}
                       >
                         {message.content}
@@ -475,18 +475,18 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
 
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-gray-100 px-4 py-2 rounded-lg">
+                  <div className="bg-orange-50 px-4 py-2 rounded-lg">
                     <div className="flex items-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                      <span className="text-gray-700 text-sm">Thinking...</span>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
+                      <span className="text-stone-700 text-sm">Thinking...</span>
                     </div>
                   </div>
                 </div>
               )}
             </div>
           ) : (
-            <div className="text-center text-gray-600 py-8">
-              <Sparkles className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+            <div className="text-center text-stone-600 py-8">
+              <Sparkles className="w-12 h-12 mx-auto mb-4 text-orange-300" />
               <p className="text-lg font-medium mb-2">
                 {welcomeMessage?.title || "AI Document Assistant"}
               </p>
@@ -498,14 +498,14 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
         </div>
 
         {/* Input Form */}
-        <form onSubmit={handleSubmit} className="p-4 border-t border-gray-200 bg-white">
+        <form onSubmit={handleSubmit} className="p-4 border-t border-orange-200 bg-orange-50/30">
           <div className="flex space-x-2">
             <input
               type="text"
               value={inputQuestion}
               onChange={(e) => setInputQuestion(e.target.value)}
               placeholder="Ask a question about this document..."
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              className="flex-1 px-3 py-2 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
               disabled={isLoading}
             />
             <Button
@@ -555,22 +555,22 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
     <div className="fixed inset-0 bg-opacity-30 backdrop-blur-sm z-50">
       <div className="w-full h-full bg-white rounded-none shadow-none border-none flex">
         {/* Left Side - Document Preview */}
-        <div className="w-1/2 bg-white border-r border-gray-200 overflow-y-auto">
+        <div className="w-1/2 bg-orange-50/20 border-r border-orange-200 overflow-y-auto">
           <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">{DocumentTitle}</h1>
-            <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+            <h1 className="text-2xl font-bold text-stone-800 mb-4">{DocumentTitle}</h1>
+            <div className="bg-white rounded-lg border border-orange-200 overflow-hidden">
               {currentDocumentData?.s3Url ? (
                 <DocumentPreview documentId={DocumentId} fileName={DocumentTitle} s3Url={currentDocumentData.s3Url} />
               ) : currentDocumentData?.DocumentText ? (
                 <div className="p-4">
-                  <pre className="whitespace-pre-wrap text-sm text-gray-700 font-mono leading-relaxed">
+                  <pre className="whitespace-pre-wrap text-sm text-stone-700 font-mono leading-relaxed">
                     {currentDocumentData.DocumentText}
                   </pre>
                 </div>
               ) : (
                 <div className="p-4">
-                  <div className="text-center text-gray-500 py-8">
-                    <Sparkles className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <div className="text-center text-stone-500 py-8">
+                    <Sparkles className="w-12 h-12 mx-auto mb-4 text-orange-300" />
                     <p className="text-lg font-medium mb-2">Document Preview</p>
                     <p className="text-sm">Document content will be displayed here</p>
                   </div>
@@ -581,9 +581,9 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
         </div>
 
         {/* Right Side - Chatbot Interface */}
-        <div className="w-1/2 bg-white flex flex-col">
+        <div className="w-1/2 bg-orange-50/20 flex flex-col">
           {/* Header */}
-          <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-100">
+          <div className="flex justify-between items-center px-6 py-4 border-b border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50">
             <div className="flex items-center gap-3">
               <Logo size="sm" />
               
@@ -593,7 +593,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
                 variant="outline"
                 size="sm"
                 onClick={resetChat}
-                className="border-gray-300 hover:bg-gray-50 text-xs"
+                className="border-orange-300 hover:bg-orange-50 text-xs"
               >
                 Clear Chat
               </Button>
@@ -602,7 +602,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
                 variant="outline"
                 size="sm"
                 onClick={() => setShareModalOpen(true)}
-                className="border-gray-300 hover:bg-gray-50 flex items-center gap-1"
+                className="border-orange-300 hover:bg-orange-50 flex items-center gap-1"
               >
                 <Share className="w-3 h-3" />
                 Share
@@ -611,7 +611,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
                 variant="outline"
                 size="sm"
                 onClick={() => setIsOpen(false)}
-                className="border-gray-300 hover:bg-gray-50"
+                className="border-orange-300 hover:bg-orange-50"
               >
                 ✕
               </Button>
@@ -622,30 +622,30 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
           <div className="flex-1 p-6 overflow-y-auto">
             {summaryLoading ? (
               <div className="space-y-4">
-                <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
-                <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
+                <div className="h-4 bg-orange-200 rounded animate-pulse"></div>
+                <div className="h-4 bg-orange-200 rounded animate-pulse w-3/4"></div>
+                <div className="h-4 bg-orange-200 rounded animate-pulse w-1/2"></div>
               </div>
             ) : initialSummary ? (
               <div className="space-y-6">
                 {/* Document Summary */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h3 className="font-semibold text-blue-900 mb-2">Document Summary</h3>
-                  <p className="text-blue-800 text-sm leading-relaxed">{initialSummary}</p>
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                  <h3 className="font-semibold text-orange-900 mb-2">Document Summary</h3>
+                  <p className="text-orange-800 text-sm leading-relaxed">{initialSummary}</p>
                 </div>
 
                 {/* Top 3 Questions */}
                 {topQuestions.length > 0 && (
                   <div className="space-y-3">
-                    <h3 className="font-semibold text-gray-900">Top Questions</h3>
+                    <h3 className="font-semibold text-stone-800">Top Questions</h3>
                     <ul className="list-disc pl-6 space-y-2">
-                      {topQuestions.map((question, index) => (
+                      {topQuestions.slice(0, 3).map((question, index) => (
                         <li key={index}>
                           <button
                             type="button"
                             onClick={() => handleSampleQuestion(question)}
                             disabled={isLoading}
-                            className="text-blue-700 underline hover:text-blue-900 focus:outline-none focus:underline bg-transparent p-0 border-0 text-left cursor-pointer disabled:text-gray-400"
+                            className="text-orange-700 underline hover:text-orange-900 focus:outline-none focus:underline bg-transparent p-0 border-0 text-left cursor-pointer disabled:text-stone-400"
                           >
                             {question}
                           </button>
@@ -658,7 +658,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
                 {/* Chat Messages */}
                 {messages.length > 0 && (
                   <div className="space-y-4">
-                    <h3 className="font-semibold text-gray-900">Conversation</h3>
+                    <h3 className="font-semibold text-stone-800">Conversation</h3>
                     {messages.map((message) => (
                       <div
                         key={message.id}
@@ -667,8 +667,8 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
                         <div
                           className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg text-sm ${
                             message.type === 'user'
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-gray-100 text-gray-900'
+                              ? 'bg-orange-600 text-white'
+                              : 'bg-orange-50 text-stone-800'
                           }`}
                         >
                           {message.content}
@@ -680,37 +680,37 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
 
                 {isLoading && (
                   <div className="flex justify-start">
-                    <div className="bg-gray-100 px-4 py-2 rounded-lg">
+                    <div className="bg-orange-50 px-4 py-2 rounded-lg">
                       <div className="flex items-center space-x-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                        <span className="text-gray-700 text-sm">Thinking...</span>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
+                        <span className="text-stone-700 text-sm">Thinking...</span>
                       </div>
                     </div>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="text-center text-gray-600 py-8">
-                <Sparkles className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <div className="text-center text-stone-600 py-8">
+                <Sparkles className="w-12 h-12 mx-auto mb-4 text-orange-300" />
                 <p className="text-lg font-medium mb-2">
-                  {welcomeMessage?.title || "Test Your AI Document Assistant"}
+                  {welcomeMessage?.title || "AI Document Assistant"}
                 </p>
                 <p className="text-sm">
-                  {welcomeMessage?.subtitle || "Ask questions about your Document to see how Anyone will experience it."}
+                  {welcomeMessage?.subtitle || "Ask any question you have about this document"}
                 </p>
               </div>
             )}
           </div>
 
           {/* Input Form */}
-          <form onSubmit={handleSubmit} className="p-4 border-t border-gray-200 bg-white">
+          <form onSubmit={handleSubmit} className="p-4 border-t border-orange-200 bg-orange-50/30">
             <div className="flex space-x-2">
               <input
                 type="text"
                 value={inputQuestion}
                 onChange={(e) => setInputQuestion(e.target.value)}
                 placeholder="Ask a question about this document..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                className="flex-1 px-3 py-2 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
                 disabled={isLoading}
               />
               <Button
@@ -755,4 +755,4 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
     />
     </>
   );
-} 
+}

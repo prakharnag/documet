@@ -99,14 +99,14 @@ export default function VoiceChat({ DocumentId, DocumentTitle, userId }: VoiceCh
           onClick={stopVoiceAgent}
           variant="outline"
           size="sm"
-          className="flex items-center gap-2 bg-green-50 border-green-300 text-green-700 whitespace-nowrap"
+          className="flex items-center gap-2 bg-orange-50 border-orange-300 text-orange-700 whitespace-nowrap"
         >
           <PhoneOff className="w-4 h-4" />
           Stop
         </Button>
       )}
       {status && (
-        <div className="absolute top-full mt-1 text-xs text-gray-600 whitespace-nowrap">
+        <div className="absolute top-full mt-1 text-xs text-stone-600 whitespace-nowrap">
           {status}
         </div>
       )}

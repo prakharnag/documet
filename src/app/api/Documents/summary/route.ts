@@ -3,7 +3,6 @@ import { db } from '@/db';
 import { Documents } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { ChatOpenAI } from '@langchain/openai';
-import { stackServerApp } from '@/stack';
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,11 +12,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'DocumentId is required.' }, { status: 400 });
     }
 
-    // Try to get authenticated user (optional for public access)
-    const user = await stackServerApp.getUser();
-    const isAuthenticated = !!user;
-
-    // Fetch the document content and check access
+    // Fetch the document content (no authentication)
     const doc = await db
       .select({ 
         DocumentText: Documents.DocumentText, 
@@ -32,13 +27,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Document not found.' }, { status: 404 });
     }
 
-    const { DocumentText, fileName, userId } = doc[0];
-
-    // Check if user has access to this document
-    // Allow access if: user is authenticated and owns the document, OR document is shared (public)
-    if (isAuthenticated && user && user.id !== userId) {
-      return NextResponse.json({ error: 'Access denied.' }, { status: 403 });
-    }
+    const { DocumentText, fileName } = doc[0];
 
     // Generate summary and questions using GPT-4 for better accuracy
     const chatModel = new ChatOpenAI({
@@ -122,4 +111,4 @@ Questions:
     console.error('Summary generation error:', error);
     return NextResponse.json({ error: 'Failed to generate summary.' }, { status: 500 });
   }
-} 
+}
