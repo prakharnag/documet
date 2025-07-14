@@ -57,7 +57,7 @@ export default function DashboardPage() {
   }, [user]);
 
   if (!user) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-600 text-lg">Loading dashboard...</div>;
+    return <div className="min-h-screen flex items-center justify-center text-stone-600 text-lg">Loading dashboard...</div>;
   }
 
   const handleLogout = () => {
@@ -73,9 +73,9 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
+      <div className="bg-white shadow-sm border-b border-orange-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Brand */}
@@ -85,7 +85,7 @@ export default function DashboardPage() {
             <div className="relative">
               <Button
                 variant="outline"
-                className="flex items-center gap-2 text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+                className="flex items-center gap-2 text-stone-700 border-orange-300 hover:bg-orange-50 hover:border-orange-400"
                 onClick={() => setMenuOpen((v) => !v)}
               >
                 <User className="w-5 h-5" />
@@ -95,16 +95,16 @@ export default function DashboardPage() {
                 <ChevronDown className="w-4 h-4" />
               </Button>
               {menuOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                <div className="absolute right-0 mt-2 w-56 bg-white border border-orange-200 rounded-lg shadow-lg z-50">
                   <button
-                    className="w-full flex items-center gap-2 px-4 py-3 text-gray-700 hover:bg-gray-50 text-left"
+                    className="w-full flex items-center gap-2 px-4 py-3 text-stone-700 hover:bg-orange-50 text-left"
                     onClick={() => { setSettingsOpen(true); setMenuOpen(false); }}
                   >
                     <Settings className="w-4 h-4" />
                     Settings
                   </button>
                   <button
-                    className="w-full flex items-center gap-2 px-4 py-3 text-gray-700 hover:bg-gray-50 text-left"
+                    className="w-full flex items-center gap-2 px-4 py-3 text-stone-700 hover:bg-orange-50 text-left"
                     onClick={handleLogout}
                   >
                     <LogOut className="w-4 h-4" />
@@ -133,42 +133,42 @@ export default function DashboardPage() {
         {/* Left Column: Upload + Steps */}
         <div className="space-y-8 w-full">
           {/* Upload Box */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 md:p-10 w-full">
+          <div className="bg-white rounded-2xl shadow-sm border border-orange-100 p-8 md:p-10 w-full">
             <DocumentForm
               onUploadSuccess={handleUploadSuccess}
               documentCount={documents.length}
             />
           </div>
           {/* Steps/Features List */}
-          <div className="bg-gradient-to-r from-blue-50/60 to-purple-50/60 rounded-2xl border border-gray-100 p-6 md:p-8 w-full">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">How Documet Works</h3>
+          <div className="bg-gradient-to-r from-orange-50/60 to-amber-50/60 rounded-2xl border border-orange-100 p-6 md:p-8 w-full">
+            <h3 className="text-lg font-semibold text-stone-800 mb-4">How Documet Works</h3>
             <ol className="space-y-4">
               <li className="flex items-start gap-3">
-                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-600">1</span>
+                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center font-bold text-orange-600">1</span>
                 <div>
-                  <div className="font-medium text-gray-900">Upload Your Document</div>
-                  <div className="text-sm text-gray-600">PDF or Word format. We parse and analyze it for you.</div>
+                  <div className="font-medium text-stone-800">Upload Your Document</div>
+                  <div className="text-sm text-stone-600">We parse and analyze it for you.</div>
                 </div>
               </li>
               <li className="flex items-start gap-3">
-                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center font-bold text-purple-600">2</span>
+                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center font-bold text-amber-600">2</span>
                 <div>
-                  <div className="font-medium text-gray-900">Test Your AI Assistant</div>
-                  <div className="text-sm text-gray-600">Ask questions and see how Anyone will interact with your Document.</div>
+                  <div className="font-medium text-stone-800">Test Your AI Assistant</div>
+                  <div className="text-sm text-stone-600">Ask questions either by chat or voice with your document.</div>
                 </div>
               </li>
               <li className="flex items-start gap-3">
-                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-green-100 flex items-center justify-center font-bold text-green-600">3</span>
+                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center font-bold text-orange-700">3</span>
                 <div>
-                  <div className="font-medium text-gray-900">Share Public Link</div>
-                  <div className="text-sm text-gray-600">Send a unique link to Anyone and track engagement.</div>
+                  <div className="font-medium text-stone-800">Share Public Link</div>
+                  <div className="text-sm text-stone-600">Send a unique link to others to collaborate and track engagement.</div>
                 </div>
               </li>
             </ol>
           </div>
         </div>
         {/* Right Column: Recent Uploads */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 w-full">
+        <div className="bg-white rounded-2xl shadow-sm border border-orange-100 p-6 md:p-8 w-full">
           <DocumentList 
             documents={documents}
             setDocuments={setDocuments}

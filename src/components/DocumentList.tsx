@@ -76,8 +76,8 @@ export default function DocumentList({ documents, setDocuments, loading }: Docum
     </div>
   );
   if (documents.length === 0) return (
-    <div className="text-center py-8 text-gray-500">
-      <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+    <div className="text-center py-8 text-stone-500">
+      <FileText className="w-12 h-12 mx-auto mb-4 text-orange-300" />
       <p>No Documents uploaded yet.</p>
       <p className="text-sm">Upload your first Document to get started!</p>
     </div>
@@ -85,18 +85,18 @@ export default function DocumentList({ documents, setDocuments, loading }: Docum
 
   return (
     <div className="mt-6 w-full">
-      <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-gray-900">
+      <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-stone-800">
         <FileText className="w-5 h-5" />
         Your Uploads
       </h3>
       <div className="divide-y divide-gray-100">
         {documents.map((Document, idx) => (
-          <div key={Document.id} className={`py-5 px-4 md:px-6 bg-white ${idx !== 0 ? 'mt-2' : ''} rounded-xl shadow-sm flex flex-col gap-4 w-full`}>
+          <div key={Document.id} className={`py-5 px-4 md:px-6 bg-white ${idx !== 0 ? 'mt-2' : ''} rounded-xl shadow-sm border border-orange-100 flex flex-col gap-4 w-full`}>
             <div className="flex-1 min-w-0">
               <div className="flex flex-col gap-2 mb-1">
-                <h4 className="font-medium text-gray-900 break-words whitespace-normal">{Document.fileName ? Document.fileName : 'Document Assistant'}</h4>
+                <h4 className="font-medium text-stone-800 break-words whitespace-normal">{Document.fileName ? Document.fileName : 'Document Assistant'}</h4>
               </div>
-              <div className="flex items-center gap-3 text-xs text-gray-500 flex-wrap mb-2">
+              <div className="flex items-center gap-3 text-xs text-stone-500 flex-wrap mb-2">
                 <div className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
                   Uploaded {new Date(Document.createdAt).toLocaleDateString('en-US', {

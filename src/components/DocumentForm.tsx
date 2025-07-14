@@ -76,6 +76,11 @@ export default function DocumentForm({ onUploadSuccess, documentCount = 0 }: Doc
         };
         
         if (onUploadSuccess) onUploadSuccess(newDocument);
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+          setMessage(null);
+        }, 3000);
       } else {
         const data = await res.json();
         setMessage(data.error || 'Failed to process Document.');
@@ -90,16 +95,16 @@ export default function DocumentForm({ onUploadSuccess, documentCount = 0 }: Doc
   }
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col items-center">
-      <h2 className="text-2xl font-bold mb-4 text-center text-gray-900">Upload your Document</h2>
-      <div className="text-sm text-gray-700 mb-2 text-center">
+    <div className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-sm border border-orange-200 flex flex-col items-center">
+      <h2 className="text-2xl font-bold mb-4 text-center text-stone-800">Upload your Document</h2>
+      <div className="text-sm text-stone-700 mb-2 text-center">
         {`You have uploaded ${documentCount} of ${MAX_DocumentS} Documents.`}
       </div>
       {documentCount >= MAX_DocumentS && (
         <div className="text-red-600 text-center mb-4">You have reached the maximum of 5 Documents. Delete one to upload more.</div>
       )}
       <div
-        className={`w-full border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center transition-colors duration-200 cursor-pointer ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50'}`}
+        className={`w-full border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center transition-colors duration-200 cursor-pointer ${dragActive ? 'border-orange-500 bg-orange-50' : 'border-orange-300 bg-orange-50'}`}
         onDragEnter={documentCount < MAX_DocumentS ? handleDrag : undefined}
         onDragOver={documentCount < MAX_DocumentS ? handleDrag : undefined}
         onDragLeave={documentCount < MAX_DocumentS ? handleDrag : undefined}
@@ -111,11 +116,11 @@ export default function DocumentForm({ onUploadSuccess, documentCount = 0 }: Doc
         }}
         style={{ minHeight: 140, opacity: documentCount >= MAX_DocumentS ? 0.5 : 1, pointerEvents: documentCount >= MAX_DocumentS ? 'none' : 'auto' }}
       >
-        <svg className="w-10 h-10 mb-2 text-blue-500" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+        <svg className="w-10 h-10 mb-2 text-orange-500" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 16v-8m0 0-3 3m3-3 3 3m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <p className="text-gray-700 mb-1">Drag & drop your PDF</p>
-        <p className="text-xs text-gray-500">or click to select a file (Only PDF)</p>
+        <p className="text-stone-700 mb-1">Drag & drop your PDF</p>
+        <p className="text-xs text-stone-500">or click to select a file (Only PDF)</p>
         <input
           type="file"
           accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -125,8 +130,8 @@ export default function DocumentForm({ onUploadSuccess, documentCount = 0 }: Doc
           className="hidden"
         />
       </div>
-      {fileName && <p className="mt-2 text-sm text-blue-600">Selected: {fileName}</p>}
-      {isUploading && <p className="mt-2 text-sm text-gray-600">Uploading and processing...</p>}
+      {fileName && <p className="mt-2 text-sm text-orange-600">Selected: {fileName}</p>}
+      {isUploading && <p className="mt-2 text-sm text-stone-600">Uploading and processing...</p>}
       {message && <p className={`mt-2 text-sm ${message.includes('success') ? 'text-green-600' : 'text-red-600'}`}>{message}</p>}
     </div>
   );
