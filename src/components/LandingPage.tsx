@@ -6,9 +6,11 @@ import { useRouter } from "next/navigation";
 import Logo from "@/components/ui/logo";
 import ChromeWindow from "@/components/ChromeWindow";
 import WaitlistForm from "@/components/WaitlistForm";
+import { useState } from "react";
 
 const LandingPage = () => {
   const router = useRouter();
+  const [showWaitlist, setShowWaitlist] = useState(false);
 
   return (
     <div className="min-h-screen">
@@ -23,18 +25,12 @@ const LandingPage = () => {
         <div className="container mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-14 md:h-16">
             <Logo size="lg" />
-            <div className="hidden md:flex items-center gap-3">
-              <Button variant="default" size="sm" className="rounded-full shadow-md px-6 py-2 font-semibold text-base bg-gradient-to-r from-orange-600 to-amber-600 text-white" onClick={() => router.push('/handler/sign-in')}>
-                Sign In
-              </Button>
-            </div>
-            {/* Mobile Sign In Button */}
-            <div className="flex md:hidden items-center">
+            <div className="flex items-center gap-3">
               <Button
                 variant="default"
                 size="sm"
-                className="rounded-full shadow-md px-4 py-2 font-semibold text-sm bg-gradient-to-r from-orange-600 to-amber-600 text-white"
-                onClick={() => router.push('/handler/sign-in')}
+                className="rounded-full shadow-md px-6 py-2 font-semibold text-base bg-gradient-to-r from-orange-600 to-amber-600 text-white"
+                onClick={() => router.push('/login')}
               >
                 Sign In
               </Button>
@@ -52,20 +48,17 @@ const LandingPage = () => {
           <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-stone-700 mt-2 sm:mt-4 text-center px-4 max-w-3xl">
             Upload your document and let AI handle questions, explanations, and support for your team, clients, or anyone, 24/7.
           </p>
-          
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mt-4 sm:mt-6 w-full max-w-md sm:max-w-none">
             <Button
-              className="px-4 sm:px-8 py-3 rounded-full shadow-lg bg-gradient-to-r from-orange-600 to-amber-600 text-white font-semibold text-sm sm:text-lg hover:scale-105 transition-transform w-full sm:w-auto min-w-0 overflow-hidden"
+              className="px-6 sm:px-8 py-3 rounded-full shadow-lg bg-gradient-to-r from-orange-600 to-amber-600 text-white font-semibold text-lg hover:scale-105 transition-transform w-full sm:w-auto min-w-0 overflow-hidden"
               onClick={() => router.push('/login')}
             >
-              <Upload className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
-              <span className="truncate block sm:hidden">Upload & Start</span>
-              <span className="truncate hidden sm:block">Upload Document & Get Started</span>
-            </Button>
-            <Button variant="outline" size="lg" className="rounded-full border-orange-600 text-orange-700 hover:bg-orange-100/50 font-semibold text-base sm:text-lg shadow-md w-full sm:w-auto">
-              Watch Demo
+              Upload & Get Started
             </Button>
           </div>
+          {showWaitlist && (
+            <></>
+          )}
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 pt-6 sm:pt-8 text-stone-600 px-4">
             <div className="flex items-center gap-2">
