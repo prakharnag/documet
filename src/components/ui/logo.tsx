@@ -71,8 +71,14 @@ export default function Logo({
           <span className={cn("font-bold text-gray-900", textSize, textClassName)}>
             Documet
           </span>
-          <span className={cn("font-medium text-gray-500", subtitleSize)}>
-          Turn your document into a voice-enabled, shareable AI assistant.          </span>
+          <span
+            className={cn(
+              "font-medium text-gray-500 truncate overflow-hidden max-w-[80vw] hidden sm:block",
+              subtitleSize
+            )}
+          >
+            Turn your document into a voice-enabled, shareable AI assistant.
+          </span>
         </div>
       )}
     </div>
