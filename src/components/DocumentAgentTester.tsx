@@ -459,7 +459,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
                       className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[80%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm break-words truncate min-w-0` + (message.type === 'user'
+                        className={`max-w-[80%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm break-words whitespace-pre-wrap min-w-0` + (message.type === 'user'
                           ? ' bg-orange-600 text-white'
                           : ' bg-orange-50 text-stone-800')}
                       >
@@ -736,7 +736,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
                         className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                       >
                         <div
-                          className={`max-w-[80%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm break-words truncate min-w-0` + (message.type === 'user'
+                          className={`max-w-[80%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm break-words whitespace-pre-wrap min-w-0` + (message.type === 'user'
                             ? ' bg-orange-600 text-white'
                             : ' bg-orange-50 text-stone-800')}
                         >

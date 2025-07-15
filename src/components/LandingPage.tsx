@@ -30,9 +30,9 @@ const LandingPage = () => {
                 variant="default"
                 size="sm"
                 className="rounded-full shadow-md px-6 py-2 font-semibold text-base bg-gradient-to-r from-orange-600 to-amber-600 text-white"
-                onClick={() => setShowWaitlist(true)}
+                onClick={() => router.push('/login')}
               >
-                Join Waitlist
+                Sign In
               </Button>
             </div>
           </div>
@@ -51,25 +51,13 @@ const LandingPage = () => {
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mt-4 sm:mt-6 w-full max-w-md sm:max-w-none">
             <Button
               className="px-6 sm:px-8 py-3 rounded-full shadow-lg bg-gradient-to-r from-orange-600 to-amber-600 text-white font-semibold text-lg hover:scale-105 transition-transform w-full sm:w-auto min-w-0 overflow-hidden"
-              onClick={() => setShowWaitlist(true)}
+              onClick={() => router.push('/login')}
             >
-              Join Waitlist
+              Upload & Get Started
             </Button>
           </div>
           {showWaitlist && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-              <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full relative">
-                <button
-                  className="absolute top-2 right-2 text-stone-400 hover:text-stone-700 text-2xl font-bold"
-                  onClick={() => setShowWaitlist(false)}
-                  aria-label="Close"
-                >
-                  ×
-                </button>
-                <h2 className="text-xl font-bold mb-4 text-center text-stone-800">Join the Waitlist</h2>
-                <WaitlistForm showName={true} buttonText="Join Waitlist" />
-              </div>
-            </div>
+            <></>
           )}
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 pt-6 sm:pt-8 text-stone-600 px-4">
