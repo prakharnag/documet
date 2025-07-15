@@ -28,6 +28,17 @@ const LandingPage = () => {
                 Sign In
               </Button>
             </div>
+            {/* Mobile Sign In Button */}
+            <div className="flex md:hidden items-center">
+              <Button
+                variant="default"
+                size="sm"
+                className="rounded-full shadow-md px-4 py-2 font-semibold text-sm bg-gradient-to-r from-orange-600 to-amber-600 text-white"
+                onClick={() => router.push('/handler/sign-in')}
+              >
+                Sign In
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -44,11 +55,12 @@ const LandingPage = () => {
           
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mt-4 sm:mt-6 w-full max-w-md sm:max-w-none">
             <Button
-              className="px-6 sm:px-8 py-3 rounded-full shadow-lg bg-gradient-to-r from-orange-600 to-amber-600 text-white font-semibold text-base sm:text-lg hover:scale-105 transition-transform w-full sm:w-auto"
+              className="px-4 sm:px-8 py-3 rounded-full shadow-lg bg-gradient-to-r from-orange-600 to-amber-600 text-white font-semibold text-sm sm:text-lg hover:scale-105 transition-transform w-full sm:w-auto min-w-0 overflow-hidden"
               onClick={() => router.push('/login')}
             >
-              <Upload className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-              Upload Document & Get Started
+              <Upload className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
+              <span className="truncate block sm:hidden">Upload & Start</span>
+              <span className="truncate hidden sm:block">Upload Document & Get Started</span>
             </Button>
             <Button variant="outline" size="lg" className="rounded-full border-orange-600 text-orange-700 hover:bg-orange-100/50 font-semibold text-base sm:text-lg shadow-md w-full sm:w-auto">
               Watch Demo
@@ -77,7 +89,7 @@ const LandingPage = () => {
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-6 sm:mb-8 bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent px-4">
           See Documet in Action
         </h2>
-        <div className="w-full max-w-4xl">
+        <div className="w-full max-w-full sm:max-w-4xl overflow-x-auto">
           <ChromeWindow>
             <div className="flex flex-col items-center justify-center w-full h-full bg-gradient-to-br from-orange-50 to-amber-50 p-4 sm:p-8">
               <span className="text-lg sm:text-2xl md:text-3xl font-semibold text-stone-700 mb-2 text-center">Demo Coming Soon</span>
