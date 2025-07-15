@@ -72,7 +72,7 @@ export default function Logo({
             Documet
           </span>
           <span className={cn("font-medium text-gray-500", subtitleSize)}>
-          Turn any document into a voice-enabled, shareable AI assistant.          </span>
+          Turn your document into a voice-enabled, shareable AI assistant.          </span>
         </div>
       )}
     </div>
