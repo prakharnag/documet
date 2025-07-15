@@ -30,6 +30,8 @@ export const Waitlist = pgTable('waitlist', {
   email: text('email').notNull().unique(),
   name: text('name'),
   source: text('source').default('landing_page'),
+  userType: text('user_type').notNull().default('other'),
+  userTypeOther: text('user_type_other'),
   isActive: boolean('is_active').default(true),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),

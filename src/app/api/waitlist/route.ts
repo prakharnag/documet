@@ -6,12 +6,27 @@ import { eq } from 'drizzle-orm';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, name, source = 'landing_page' } = body;
+    const { email, name, source = 'landing_page', userType, userTypeOther } = body;
 
     // Validate email
     if (!email || !email.includes('@')) {
       return NextResponse.json(
         { error: 'Valid email is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate userType
+    const allowedTypes = ['student', 'researcher', 'developer', 'other'];
+    if (!userType || !allowedTypes.includes(userType)) {
+      return NextResponse.json(
+        { error: 'Please select a valid user type.' },
+        { status: 400 }
+      );
+    }
+    if (userType === 'other' && (!userTypeOther || userTypeOther.trim().length === 0)) {
+      return NextResponse.json(
+        { error: 'Please specify your user type.' },
         { status: 400 }
       );
     }
@@ -37,6 +52,8 @@ export async function POST(request: NextRequest) {
         email: email.toLowerCase().trim(),
         name: name?.trim() || null,
         source,
+        userType,
+        userTypeOther: userType === 'other' ? userTypeOther?.trim() : null,
       })
       .returning();
 
