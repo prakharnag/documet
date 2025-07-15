@@ -375,10 +375,10 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
   // If showInitialSummary is true, use a non-modal layout (for public pages)
   if (showInitialSummary && defaultOpen) {
     return (
-      <div className="h-full flex flex-col bg-orange-50/20">
+      <div className="h-full flex flex-col bg-orange-50/20 max-w-full w-full overflow-x-auto">
         {/* Header */}
         <div className="flex justify-between items-center px-3 sm:px-6 py-3 sm:py-4 border-b border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50">
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Logo size="sm" />
           </div>
           <div className="flex gap-1 sm:gap-2">
@@ -386,16 +386,16 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
               onClick={resetChat}
               variant="outline"
               size="sm"
-              className="text-xs px-2 sm:px-3"
+              className="flex items-center gap-1 px-2 h-8 text-xs sm:px-3 sm:h-9 sm:text-sm"
             >
               Clear
             </Button>
-            <VoiceChat DocumentId={DocumentId} DocumentTitle={DocumentTitle} userId={user?.id} />
+            <VoiceChat DocumentId={DocumentId} DocumentTitle={DocumentTitle} userId={user?.id} buttonClassName="flex items-center gap-1 px-2 h-8 text-xs sm:px-3 sm:h-9 sm:text-sm" />
             <Button
               onClick={() => setShareModalOpen(true)}
               variant="outline"
               size="sm"
-              className="flex items-center gap-1 px-2 sm:px-3"
+              className="flex items-center gap-1 px-2 h-8 text-xs sm:px-3 sm:h-9 sm:text-sm"
             >
               <Share className="w-3 h-3 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">Share</span>
@@ -404,7 +404,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
               onClick={handleDownload}
               variant="outline"
               size="sm"
-              className="flex items-center gap-1 px-2 sm:px-3"
+              className="flex items-center gap-1 px-2 h-8 text-xs sm:px-3 sm:h-9 sm:text-sm"
             >
               <Download className="w-3 h-3 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">Download</span>
@@ -459,11 +459,9 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
                       className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[80%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm ${
-                          message.type === 'user'
-                            ? 'bg-orange-600 text-white'
-                            : 'bg-orange-50 text-stone-800'
-                        }`}
+                        className={`max-w-[80%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm break-words truncate min-w-0` + (message.type === 'user'
+                          ? ' bg-orange-600 text-white'
+                          : ' bg-orange-50 text-stone-800')}
                       >
                         {message.content}
                       </div>
@@ -497,14 +495,14 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
         </div>
 
         {/* Input Form */}
-        <form onSubmit={handleSubmit} className="p-3 sm:p-4 border-t border-orange-200 bg-orange-50/30">
-          <div className="flex space-x-2">
+        <form onSubmit={handleSubmit} className="p-3 sm:p-4 border-t border-orange-200 bg-orange-50/30 max-w-full w-full">
+          <div className="flex space-x-2 flex-wrap min-w-0 w-full">
             <input
               type="text"
               value={inputQuestion}
               onChange={(e) => setInputQuestion(e.target.value)}
               placeholder="Ask a question about this document..."
-              className="flex-1 px-2 sm:px-3 py-2 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-xs sm:text-sm"
+              className="flex-1 px-2 sm:px-3 py-2 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-xs sm:text-sm min-w-0 max-w-full"
               disabled={isLoading}
             />
             <Button
@@ -552,29 +550,29 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
   return (
     <>
     <div className="fixed inset-0 bg-opacity-30 backdrop-blur-sm z-50">
-      <div className="w-full h-full bg-white rounded-none shadow-none border-none flex flex-col lg:flex-row">
+      <div className="w-full h-full bg-white rounded-none shadow-none border-none flex flex-col lg:flex-row max-w-full overflow-x-auto">
         {/* Mobile Header - Only show on mobile */}
         <div className="lg:hidden flex justify-between items-center px-4 py-3 border-b border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <Logo size="sm" />
-            <h1 className="text-sm font-semibold text-stone-800 truncate flex-1">{DocumentTitle}</h1>
+            <h1 className="text-xs font-semibold text-stone-800 truncate min-w-0 max-w-[60vw] flex-1">{DocumentTitle}</h1>
           </div>
           <div className="flex gap-1 flex-shrink-0">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowDocumentPreview(!showDocumentPreview)}
-              className="border-orange-300 hover:bg-orange-50 text-xs px-2 w-8 h-8"
+              className="flex items-center gap-1 px-2 h-8 text-xs sm:px-3 sm:h-9 sm:text-sm border-orange-300 hover:bg-orange-50"
               title={showDocumentPreview ? "Show Chat" : "Show Document"}
             >
               {showDocumentPreview ? <MessageSquare className="w-3 h-3" /> : <FileText className="w-3 h-3" />}
             </Button>
-            <VoiceChat DocumentId={DocumentId} DocumentTitle={DocumentTitle} userId={user?.id} />
+            <VoiceChat DocumentId={DocumentId} DocumentTitle={DocumentTitle} userId={user?.id} buttonClassName="flex items-center gap-1 px-2 h-8 text-xs sm:px-3 sm:h-9 sm:text-sm" />
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShareModalOpen(true)}
-              className="border-orange-300 hover:bg-orange-50 text-xs px-2 w-8 h-8"
+              className="flex items-center gap-1 px-2 h-8 text-xs sm:px-3 sm:h-9 sm:text-sm border-orange-300 hover:bg-orange-50"
               title="Share"
             >
               <Share className="w-3 h-3" />
@@ -583,7 +581,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
               variant="outline"
               size="sm"
               onClick={resetChat}
-              className="border-orange-300 hover:bg-orange-50 text-xs px-2 w-8 h-8"
+              className="flex items-center gap-1 px-2 h-8 text-xs sm:px-3 sm:h-9 sm:text-sm border-orange-300 hover:bg-orange-50"
               title="Clear Chat"
             >
               <RotateCcw className="w-3 h-3" />
@@ -592,7 +590,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
               variant="outline"
               size="sm"
               onClick={() => setIsOpen(false)}
-              className="border-orange-300 hover:bg-orange-50 px-2 w-8 h-8"
+              className="flex items-center gap-1 px-2 h-8 text-xs sm:px-3 sm:h-9 sm:text-sm border-orange-300 hover:bg-orange-50"
               title="Close"
             >
               <X className="w-3 h-3" />
@@ -655,7 +653,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
         </div>
 
         {/* Right Side - Chatbot Interface */}
-        <div className="flex-1 lg:w-1/2 bg-orange-50/20 flex flex-col">
+        <div className="flex-1 lg:w-1/2 bg-orange-50/20 flex flex-col max-w-full w-full overflow-x-auto">
           {/* Desktop Header - Only show on desktop */}
           <div className="hidden lg:flex justify-between items-center px-4 sm:px-6 py-3 sm:py-4 border-b border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -670,7 +668,7 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
               >
                 Clear Chat
               </Button>
-              <VoiceChat DocumentId={DocumentId} DocumentTitle={DocumentTitle} userId={user?.id} />
+              <VoiceChat DocumentId={DocumentId} DocumentTitle={DocumentTitle} userId={user?.id} buttonClassName="flex items-center gap-1 px-2 h-8 text-xs sm:px-3 sm:h-9 sm:text-sm" />
               <Button
                 variant="outline"
                 size="sm"
@@ -738,11 +736,9 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
                         className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                       >
                         <div
-                          className={`max-w-[80%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm ${
-                            message.type === 'user'
-                              ? 'bg-orange-600 text-white'
-                              : 'bg-orange-50 text-stone-800'
-                          }`}
+                          className={`max-w-[80%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm break-words truncate min-w-0` + (message.type === 'user'
+                            ? ' bg-orange-600 text-white'
+                            : ' bg-orange-50 text-stone-800')}
                         >
                           {message.content}
                         </div>
@@ -776,14 +772,14 @@ export default function DocumentAgentTester({ DocumentId, DocumentTitle, default
           </div>
 
           {/* Input Form */}
-          <form onSubmit={handleSubmit} className="p-3 sm:p-4 border-t border-orange-200 bg-orange-50/30">
-            <div className="flex space-x-2">
+          <form onSubmit={handleSubmit} className="p-3 sm:p-4 border-t border-orange-200 bg-orange-50/30 max-w-full w-full">
+            <div className="flex space-x-2 flex-wrap min-w-0 w-full">
               <input
                 type="text"
                 value={inputQuestion}
                 onChange={(e) => setInputQuestion(e.target.value)}
                 placeholder="Ask a question about this document..."
-                className="flex-1 px-2 sm:px-3 py-2 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-xs sm:text-sm"
+                className="flex-1 px-2 sm:px-3 py-2 border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-xs sm:text-sm min-w-0 max-w-full"
                 disabled={isLoading}
               />
               <Button

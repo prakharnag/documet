@@ -9,9 +9,10 @@ interface VoiceChatProps {
   DocumentId: string;
   DocumentTitle: string;
   userId?: string;
+  buttonClassName?: string;
 }
 
-export default function VoiceChat({ DocumentId, DocumentTitle, userId }: VoiceChatProps) {
+export default function VoiceChat({ DocumentId, DocumentTitle, userId, buttonClassName }: VoiceChatProps) {
   const [isActive, setIsActive] = useState(false);
   const [status, setStatus] = useState('');
   const vapiRef = useRef<any>(null);
@@ -89,20 +90,20 @@ export default function VoiceChat({ DocumentId, DocumentTitle, userId }: VoiceCh
           onClick={startVoiceAgent}
           variant="outline"
           size="sm"
-          className="flex items-center gap-2 whitespace-nowrap"
+          className={buttonClassName || "flex items-center gap-1 px-2 h-8 text-xs sm:px-3 sm:h-9 sm:text-sm whitespace-nowrap"}
         >
           <Phone className="w-4 h-4" />
-          Voice Agent
+          <span className="hidden sm:inline">Voice Agent</span>
         </Button>
       ) : (
         <Button
           onClick={stopVoiceAgent}
           variant="outline"
           size="sm"
-          className="flex items-center gap-2 bg-orange-50 border-orange-300 text-orange-700 whitespace-nowrap"
+          className={buttonClassName || "flex items-center gap-1 px-2 h-8 text-xs sm:px-3 sm:h-9 sm:text-sm bg-orange-50 border-orange-300 text-orange-700 whitespace-nowrap"}
         >
           <PhoneOff className="w-4 h-4" />
-          Stop
+          <span className="hidden sm:inline">Stop</span>
         </Button>
       )}
       {status && (
