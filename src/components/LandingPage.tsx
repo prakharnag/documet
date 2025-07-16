@@ -96,10 +96,15 @@ const LandingPage = () => {
         </h2>
         <div className="w-full max-w-full sm:max-w-4xl overflow-x-auto">
           <ChromeWindow>
-            <div className="flex flex-col items-center justify-center w-full h-full bg-gradient-to-br from-orange-50 to-amber-50 p-4 sm:p-8">
-              <span className="text-lg sm:text-2xl md:text-3xl font-semibold text-stone-700 mb-2 text-center">Demo Coming Soon</span>
-              <span className="text-sm sm:text-base text-stone-600 text-center">You&apos;ll see how to upload, chat, and share with your AI assistant!</span>
-            </div>
+            <iframe
+              src="https://www.youtube.com/embed/ptu2A2J-CR8"
+              title="Demo Video"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full rounded-none"
+              style={{ minHeight: 200 }}
+            ></iframe>
           </ChromeWindow>
         </div>
         <p className="mt-6 text-base sm:text-lg text-stone-600 text-center max-w-2xl px-4">
